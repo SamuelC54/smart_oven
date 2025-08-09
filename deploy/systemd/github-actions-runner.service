@@ -5,8 +5,7 @@ After=network.target
 [Service]
 ExecStart=/home/samuel/actions-runner/run.sh
 WorkingDirectory=/home/samuel/actions-runner
-Restart=always
-RestartSec=3
+Restart=no
 User=samuel
 
 [Install]
