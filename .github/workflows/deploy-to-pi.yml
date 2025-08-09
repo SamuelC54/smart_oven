@@ -6,6 +6,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      PI_USER: ${{ secrets.PI_USER }}
+      PI_HOST: ${{ secrets.PI_HOST }}
+      PI_DIR:  ${{ secrets.PI_DIR }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -15,7 +20,7 @@ jobs:
           node-version: '20'
 
       - name: Build frontend
-        working-directory: frontend/
+        working-directory: ./frontend
         run: |
           npm ci
           npm run build
