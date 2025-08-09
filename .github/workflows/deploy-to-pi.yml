@@ -1,16 +1,11 @@
-name: Deploy to Pi
+name: Deploy to Raspberry Pi
 on:
   push:
     branches: [ main ]
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    env:
-      PI_USER: ${{ secrets.PI_USER }}
-      PI_HOST: ${{ secrets.PI_HOST }}
-      PI_DIR:  ${{ secrets.PI_DIR }}
-
+    runs-on: [self-hosted, raspberrypi]
     steps:
       - uses: actions/checkout@v4
 
@@ -25,20 +20,34 @@ jobs:
           npm ci
           npm run build
 
-      - name: Add SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.PI_SSH_KEY }}
-
-      - name: Rsync files to Pi
+      - name: Install frontend build
         run: |
-          rsync -avz --delete \
-            --exclude='.git' \
-            --exclude='**/node_modules' \
-            ./ ${PI_USER}@${PI_HOST}:${PI_DIR}/
+          mkdir -p /home/github/oven/frontend
+          cp -r ./frontend/dist/* /home/github/oven/frontend/
 
-      # - name: Reinstall deps on Pi (backend only) & restart
-      #   run: |
-      #     ssh ${PI_USER}@${PI_HOST} '
-      #       cd ~/oven/backend && npm ci --omit=dev && sudo systemctl restart oven-backend
-      #     '
+      - name: Install/Update systemd units from repo
+        run: |
+          # Copy unit files from the repo into systemd dir
+          sudo install -m 0644 deploy/systemd/oven-frontend.service /etc/systemd/system/oven-frontend.service
+          sudo install -m 0644 deploy/systemd/oven-kiosk.service /etc/systemd/system/oven-kiosk.service
+          # Pick chromium path if different:
+          if [ -x /usr/bin/chromium ] && ! grep -q '/usr/bin/chromium ' /etc/systemd/system/oven-kiosk.service; then
+            echo "Warning: chromium path might be /usr/bin/chromium on this system."
+          fi
+          # Reload & enable
+          sudo systemctl daemon-reload
+          sudo systemctl enable oven-frontend.service
+          sudo systemctl enable oven-kiosk.service
+
+      - name: Ensure static server is available (once)
+        run: |
+          if ! command -v serve >/dev/null 2>&1; then
+            sudo npm i -g serve
+          fi
+
+      - name: Restart services
+        run: |
+          sudo systemctl restart oven-frontend.service
+          # small delay so :3000 is up before kiosk launches
+          sleep 2
+          sudo systemctl restart oven-kiosk.service
