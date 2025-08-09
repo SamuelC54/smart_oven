@@ -10,9 +10,6 @@ User=samuel
 Environment=DISPLAY=:0
 Environment=XDG_RUNTIME_DIR=/run/user/%U
 
-# Wait (up to ~30s) for either X11 or Wayland to be ready before starting
-ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do [ -S /tmp/.X11-unix/X0 ] || [ -S /run/user/%U/wayland-0 ] && exit 0; sleep 1; done; echo "Display not ready"; exit 1'
-
 ExecStart=/usr/bin/chromium-browser \
   --user-data-dir=/tmp/kiosk-profile \
   --kiosk \
