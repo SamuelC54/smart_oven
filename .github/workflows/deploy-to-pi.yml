@@ -25,6 +25,10 @@ jobs:
           sudo mkdir -p /home/smart-oven/frontend
           sudo cp -r ./frontend/dist/* /home/smart-oven/frontend/
 
+      - name: Install/Update kiosk script
+        run: |
+          sudo install -m 0755 ./deploy/oven-kiosk.sh /home/smart-oven/oven-kiosk.sh
+
       - name: Install/Update systemd units from repo
         run: |
           # Copy unit files from the repo into systemd dir
