@@ -3,8 +3,8 @@ Description=GitHub Actions Runner
 After=network.target
 
 [Service]
-ExecStart=~/actions-runner/run.sh
-WorkingDirectory=~/pi/actions-runner
+ExecStart=/home/samuel/actions-runner/run.sh
+WorkingDirectory=/home/samuel/actions-runner
 Restart=always
 RestartSec=3
 
