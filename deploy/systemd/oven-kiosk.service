@@ -5,7 +5,7 @@ After=graphical.target
 
 [Service]
 User=samuel
-ExecStart=/home/smart-oven/deploy/oven-kiosk.sh
+ExecStart=/home/smart-oven/oven-kiosk.sh
 Restart=no
 
 [Install]
