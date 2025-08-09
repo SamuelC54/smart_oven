@@ -5,9 +5,9 @@ After=network-online.target
 [Service]
 Type=simple
 User=github
-WorkingDirectory=/home/github/oven/frontend
+WorkingDirectory=/home/smart-oven/frontend
 # Simple static server for the build output. Install once: sudo npm i -g serve
-ExecStart=/usr/bin/env serve -s /home/github/oven/frontend -l 3000
+ExecStart=/usr/bin/env serve -s /home/smart-oven/frontend -l 3000
 Restart=always
 RestartSec=3
 Environment=NODE_ENV=production

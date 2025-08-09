@@ -22,8 +22,8 @@ jobs:
 
       - name: Install frontend build
         run: |
-          mkdir -p /home/github/oven/frontend
-          cp -r ./frontend/dist/* /home/github/oven/frontend/
+          sudo mkdir -p /home/smart-oven/frontend
+          sudo cp -r ./frontend/dist/* /home/smart-oven/frontend/
 
       - name: Install/Update systemd units from repo
         run: |
