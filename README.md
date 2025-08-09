@@ -96,7 +96,7 @@ In your GitHub repository:
    - **`PI_SSH_KEY`** → contents of `~/.ssh/oven_deploy` (private key file)
    - **`PI_HOST`** → Pi’s Tailscale IP (e.g., `100.64.12.34`)
    - **`PI_USER`** → `pi`
-   - **`PI_DIR`** → `/home/pi/smart-oven`
+   - **`PI_DIR`** → `~/smart-oven`
 
 ---
 
