@@ -30,14 +30,16 @@ jobs:
           # Copy unit files from the repo into systemd dir
           sudo install -m 0644 deploy/systemd/oven-frontend.service /etc/systemd/system/oven-frontend.service
           sudo install -m 0644 deploy/systemd/oven-kiosk.service /etc/systemd/system/oven-kiosk.service
+          sudo install -m 0644 deploy/systemd/github-actions-runner.service /etc/systemd/system/github-actions-runner.service
           # Pick chromium path if different:
           if [ -x /usr/bin/chromium ] && ! grep -q '/usr/bin/chromium ' /etc/systemd/system/oven-kiosk.service; then
             echo "Warning: chromium path might be /usr/bin/chromium on this system."
           fi
-          # Reload & enable
+          # Reload & enable services
           sudo systemctl daemon-reload
           sudo systemctl enable oven-frontend.service
           sudo systemctl enable oven-kiosk.service
+          sudo systemctl enable github-actions-runner.service
 
       - name: Ensure static server is available (once)
         run: |
@@ -51,6 +53,7 @@ jobs:
           # small delay so :3000 is up before kiosk launches
           sleep 2
           sudo systemctl restart oven-kiosk.service
+          sudo systemctl restart github-actions-runner.service
 
       - name: Restart Raspberry Pi
         run: |
