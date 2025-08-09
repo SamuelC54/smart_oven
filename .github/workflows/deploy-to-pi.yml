@@ -20,10 +20,6 @@ jobs:
           npm ci
           npm run build
 
-      - name: Install backend deps (prod)
-        working-directory: backend
-        run: npm ci --omit=dev
-
       - name: Add SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -36,8 +32,8 @@ jobs:
             --exclude='**/node_modules' \
             ./ ${PI_USER}@${PI_HOST}:${PI_DIR}/
 
-      - name: Reinstall deps on Pi (backend only) & restart
-        run: |
-          ssh ${PI_USER}@${PI_HOST} '
-            cd ~/oven/backend && npm ci --omit=dev && sudo systemctl restart oven-backend
-          '
+      # - name: Reinstall deps on Pi (backend only) & restart
+      #   run: |
+      #     ssh ${PI_USER}@${PI_HOST} '
+      #       cd ~/oven/backend && npm ci --omit=dev && sudo systemctl restart oven-backend
+      #     '

@@ -1,0 +1,32 @@
+# Let's create the oven-kiosk.service content and save it as a file for the user to download.
+
+oven_kiosk_service_content = """[Unit]
+Description=Oven UI Kiosk
+After=systemd-user-sessions.service oven-backend.service network-online.target
+Wants=network-online.target
+
+[Service]
+User=pi
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+PAMName=login
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+StandardInput=tty
+StandardOutput=journal
+WorkingDirectory=/home/pi
+ExecStart=/usr/bin/startx /usr/bin/chromium-browser --kiosk --noerrdialogs --disable-infobars --check-for-update-interval=31536000 --app=http://127.0.0.1:8000 -- :0 vt1 -nocursor
+ExecStop=/usr/bin/killall -q chromium-browser || true
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target
+"""
+
+# Save to file
+service_file_path = "/mnt/data/oven-kiosk.service"
+with open(service_file_path, "w") as f:
+    f.write(oven_kiosk_service_content)
+
+service_file_path
