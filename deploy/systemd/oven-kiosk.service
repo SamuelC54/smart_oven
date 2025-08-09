@@ -1,16 +1,13 @@
 [Unit]
 Description=Oven UI Kiosk
-After=graphical.target network-online.target
+After=graphical-session.target
 
 [Service]
-Environment=DISPLAY=:0  # Only needed for X11
-Environment=XDG_RUNTIME_DIR=/run/user/1001  # Only needed for Wayland
 ExecStart=/usr/bin/chromium-browser \
-  --noerrdialogs --kiosk --incognito --start-fullscreen \
-  --disable-restore-session-state --disable-infobars \
+  --kiosk --incognito --start-fullscreen --noerrdialogs \
+  --disable-restore-session-state \
   http://localhost:3000
-Restart=always
-RestartSec=3
+Restart=no
 
 [Install]
-WantedBy=graphical.target
+WantedBy=default.target
