@@ -1,0 +1,43 @@
+name: Deploy to Pi
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build frontend
+        working-directory: frontend/
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install backend deps (prod)
+        working-directory: backend
+        run: npm ci --omit=dev
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.PI_SSH_KEY }}
+
+      - name: Rsync files to Pi
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='**/node_modules' \
+            ./ ${PI_USER}@${PI_HOST}:${PI_DIR}/
+
+      - name: Reinstall deps on Pi (backend only) & restart
+        run: |
+          ssh ${PI_USER}@${PI_HOST} '
+            cd ~/oven/backend && npm ci --omit=dev && sudo systemctl restart oven-backend
+          '
