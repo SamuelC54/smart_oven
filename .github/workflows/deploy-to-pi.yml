@@ -41,21 +41,6 @@ jobs:
           sudo systemctl enable oven-kiosk.service
           sudo systemctl enable github-actions-runner.service
 
-      - name: Ensure static server is available (once)
-        run: |
-          if ! command -v serve >/dev/null 2>&1; then
-            sudo npm i -g serve
-          fi
-
-      - name: Restart services
-        run: |
-          sudo systemctl restart oven-frontend.service
-          sleep 2  # Give oven-frontend some time to restart
-          sudo systemctl restart oven-kiosk.service
-          sleep 2  # Give oven-kiosk some time to restart
-          sudo systemctl restart github-actions-runner.service
-          sleep 5  # Adding more time for the runner to settle after restart
-
   reboot:
     runs-on: [self-hosted]
     needs: deploy
