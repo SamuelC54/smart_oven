@@ -3,11 +3,9 @@ Description=Oven UI Kiosk
 After=graphical.target network-online.target
 
 [Service]
-User=github
-# If you’re on X11 set DISPLAY, on Wayland XDG_RUNTIME_DIR is typically enough.
-Environment=DISPLAY=:0
-Environment=XDG_RUNTIME_DIR=/run/user/1001
-# On some images chromium is /usr/bin/chromium instead of chromium-browser
+User=samuel  # Change this if necessary
+Environment=DISPLAY=:0  # Only needed for X11
+Environment=XDG_RUNTIME_DIR=/run/user/1001  # Only needed for Wayland
 ExecStart=/usr/bin/chromium-browser \
   --noerrdialogs --kiosk --incognito --start-fullscreen \
   --disable-restore-session-state --disable-infobars \
