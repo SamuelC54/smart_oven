@@ -12,15 +12,24 @@ This document explains the **one-time setup** needed so GitHub Actions can deplo
 ### Install Node.js, npm, and Git
 ```bash
 sudo apt update
-sudo apt install -y nodejs npm git
+sudo apt install -y nodejs npm git openssh-server
 node -v
 npm -v
 ```
 
+### Enable ssh and start it:
+```bash
+sudo systemctl enable --now ssh
+sudo systemctl status ssh
+```
+
+You should see: Active: ``active (running)``
+
+
 ### Create the project directory
 ```bash
-mkdir -p ~/oven
-cd ~/oven
+mkdir -p ~/smart-oven
+cd ~/smart-oven
 git init  # empty repo so rsync has a place to copy files
 ```
 
@@ -43,11 +52,16 @@ git init  # empty repo so rsync has a place to copy files
    - It will look like `100.x.x.x`.
    - Save this for later — this will be the `PI_HOST` GitHub secret.
 
+3. **Find the Pi's Username:**
+   ```bash
+   whoami
+   ```
+
 ---
 
 ## 3. Create an SSH key for GitHub Actions
 
-On your **development machine**:
+On your **development machine**: (use bash if on window)
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/oven_deploy -C "ci to pi"
@@ -62,13 +76,13 @@ ssh-keygen -t ed25519 -f ~/.ssh/oven_deploy -C "ci to pi"
 ## 4. Add the SSH public key to the Pi
 
 ```bash
-ssh pi@<PI_TAILSCALE_IP> "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
-cat ~/.ssh/oven_deploy.pub | ssh pi@<PI_TAILSCALE_IP> "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+ssh <PI_USERNAME>@<PI_TAILSCALE_IP> "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+cat ~/.ssh/oven_deploy.pub | ssh <PI_USERNAME>@<PI_TAILSCALE_IP> "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```
 
 Test the connection:
 ```bash
-ssh -i ~/.ssh/oven_deploy pi@<PI_TAILSCALE_IP>
+ssh -i ~/.ssh/oven_deploy <PI_USERNAME>@<PI_TAILSCALE_IP>
 ```
 You should log in without a password.
 
@@ -82,7 +96,7 @@ In your GitHub repository:
    - **`PI_SSH_KEY`** → contents of `~/.ssh/oven_deploy` (private key file)
    - **`PI_HOST`** → Pi’s Tailscale IP (e.g., `100.64.12.34`)
    - **`PI_USER`** → `pi`
-   - **`PI_DIR`** → `/home/pi/oven`
+   - **`PI_DIR`** → `/home/pi/smart-oven`
 
 ---
 
