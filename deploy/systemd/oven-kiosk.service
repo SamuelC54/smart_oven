@@ -1,14 +1,17 @@
 [Unit]
 Description=Oven UI Kiosk
-After=graphical.target
+After=graphical-session.target
+Wants=graphical-session.target
 
 [Service]
 User=samuel
-ExecStart=/usr/bin/chromium-browser --user-data-dir=/tmp/kiosk-profile \
-  --kiosk --incognito --start-fullscreen --noerrdialogs \
-  --disable-restore-session-state --ozone-platform-hint=auto \
-  http://localhost:3000
+ExecStart=/bin/bash -lc '\
+  [ -S /tmp/.X11-unix/X0 ] && export DISPLAY=:0; \
+  exec /usr/bin/chromium-browser --user-data-dir=/tmp/kiosk-profile \
+    --kiosk --incognito --start-fullscreen --noerrdialogs \
+    --disable-restore-session-state --ozone-platform-hint=auto \
+    http://localhost:3000'
 Restart=no
 
 [Install]
-WantedBy=graphical.target
+WantedBy=default.target
