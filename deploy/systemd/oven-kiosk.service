@@ -1,6 +1,5 @@
 [Unit]
 Description=Oven UI Kiosk
-Requires=graphical.target
 After=graphical.target
 
 [Service]
@@ -9,4 +8,4 @@ ExecStart=/home/smart-oven/oven-kiosk.sh
 Restart=no
 
 [Install]
-WantedBy=graphical.target
+WantedBy=multi-user.target
