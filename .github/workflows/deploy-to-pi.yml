@@ -50,13 +50,18 @@ jobs:
       - name: Restart services
         run: |
           sudo systemctl restart oven-frontend.service
-          # small delay so :3000 is up before kiosk launches
-          sleep 2
+          sleep 2  # Give oven-frontend some time to restart
           sudo systemctl restart oven-kiosk.service
+          sleep 2  # Give oven-kiosk some time to restart
           sudo systemctl restart github-actions-runner.service
+          sleep 5  # Adding more time for the runner to settle after restart
 
+  reboot:
+    runs-on: [self-hosted]
+    needs: deploy
+    continue-on-error: true  # Allow failure on this job
+    timeout-minutes: 1  # Prevent hanging indefinitely  
+    steps:
       - name: Restart Raspberry Pi
         run: |
-          exit 0  # Mark job as complete
-          sudo reboot  # Reboot happens after the action finishes
-
+          sudo reboot  # Reboot happens after the deploy job finishes
