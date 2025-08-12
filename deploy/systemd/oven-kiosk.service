@@ -16,10 +16,8 @@ ExecStart=/usr/bin/chromium-browser \
   --start-fullscreen \
   --noerrdialogs \
   --disable-restore-session-state \
-  --touch-events=enabled \
-  --force-device-scale-factor=1.5 \
-  --enable-features=UseOzonePlatform,WaylandWindowDecorations \
-  --ozone-platform=wayland \
+  --enable-features=UseOzonePlatform \
+  --ozone-platform-hint=auto \
   http://localhost:3000
 
 Restart=on-failure
