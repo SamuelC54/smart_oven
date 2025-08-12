@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { EnhancedThermomixDashboard } from './components/EnhancedThermomixDashboard';
 import { ThermomixRecipeSelector } from './components/ThermomixRecipeSelector';
 import { RecipeDetails } from './components/RecipeDetails';
@@ -41,7 +41,7 @@ export default function App() {
   const [currentTemp, setCurrentTemp] = useState(25);
   const [targetTemp, setTargetTemp] = useState(180);
   const [timeRemaining, setTimeRemaining] = useState('1:30:00');
-  const [humidity, setHumidity] = useState(45);
+  const [humidity] = useState(45);
   const [ingredientTemp, setIngredientTemp] = useState(22);
   const [selectedRecipe, setSelectedRecipe] = useState<EnhancedRecipe | null>(null);
   const [viewingRecipe, setViewingRecipe] = useState<EnhancedRecipe | null>(null);
@@ -119,8 +119,8 @@ export default function App() {
         const totalSeconds = hours * 3600 + minutes * 60 + seconds;
         
         // Calculate expected time for this phase
-        const expectedPhaseTime = currentRecipePhase.duration * 60;
-        const totalRecipeTime = selectedRecipe.totalTime * 60;
+        // const expectedPhaseTime = currentRecipePhase.duration * 60;
+        // const totalRecipeTime = selectedRecipe.totalTime * 60;
         const remainingPhases = selectedRecipe.phases.slice(currentPhase + 1);
         const remainingPhaseTime = remainingPhases.reduce((acc, phase) => acc + phase.duration, 0) * 60;
         
@@ -143,7 +143,7 @@ export default function App() {
       const interval = setInterval(() => {
         setTimeRemaining(prev => {
           const [hours, minutes, seconds] = prev.split(':').map(Number);
-          let totalSeconds = hours * 3600 + minutes * 60 + seconds - 1;
+          const totalSeconds = hours * 3600 + minutes * 60 + seconds - 1;
           
           if (totalSeconds <= 0) {
             setIsRunning(false);
@@ -200,7 +200,7 @@ export default function App() {
     handleSelectRecipe(recipe);
   };
 
-  const handleSaveSettings = (settings: any) => {
+  const handleSaveSettings = () => {
     setCurrentView('dashboard');
     toast.success('⚙️ Settings saved successfully!');
   };
