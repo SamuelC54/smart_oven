@@ -1,7 +1,7 @@
 name: Deploy to Raspberry Pi
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   deploy:
@@ -12,7 +12,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Build frontend
         working-directory: ./frontend
@@ -41,11 +41,28 @@ jobs:
           sudo systemctl enable oven-kiosk.service
           sudo systemctl enable github-actions-runner.service
 
+  deploy-backend:
+    runs-on: [self-hosted]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Docker Buildx (optional)
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compose up
+        run: |
+          docker compose down || true
+          docker compose up -d --build
+
+      - name: Smoke test
+        run: |
+          curl -sSf http://127.0.0.1:8081/health
+
   reboot:
     runs-on: [self-hosted]
     needs: deploy
-    continue-on-error: true  # Allow failure on this job
-    timeout-minutes: 1  # Prevent hanging indefinitely  
+    continue-on-error: true # Allow failure on this job
+    timeout-minutes: 1 # Prevent hanging indefinitely
     steps:
       - name: Restart Raspberry Pi
         run: |

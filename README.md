@@ -11,6 +11,8 @@ This document explains the **one-time setup** needed so GitHub Actions can deplo
 follow the step here: https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners
 for ARM architecture
 
+the runner must have the label: self-hosted
+
 ## 7. Done! Deploy via GitHub Runner workflow
 
 Once the GitHub Actions workflow is in place:

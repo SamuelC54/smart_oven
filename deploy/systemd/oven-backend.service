@@ -1,0 +1,19 @@
+[Unit]
+Description=Smart Oven API (FastAPI + MAX31865)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smart-oven
+Group=smart-oven
+# Give access to /dev/spidev* and /dev/gpiomem without running as root
+SupplementaryGroups=spi gpio
+WorkingDirectory=/opt/smart-oven-api
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/smart-oven-api/venv/bin/uvicorn app:app --host 0.0.0.0 --port 8081
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
