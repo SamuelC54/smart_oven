@@ -1,0 +1,53 @@
+name: Bootstrap Docker on Pi
+on:
+  workflow_dispatch:
+
+jobs:
+  install-docker:
+    runs-on: [self-hosted]
+    steps:
+      - name: Who am I?
+        run: |
+          whoami
+          id
+
+      - name: Install Docker Engine (rootful)
+        run: |
+          # Requires passwordless sudo for the runner user
+          curl -fsSL https://get.docker.com | sudo sh
+          sudo systemctl enable --now docker
+
+      - name: Install Compose plugin
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+
+      - name: Add runner user to docker group
+        run: |
+          USERNAME="$(id -un)"
+          sudo usermod -aG docker "$USERNAME"
+          echo "Added $USERNAME to docker group."
+
+      - name: Sanity check (using sudo; group not active yet)
+        run: |
+          sudo docker info
+          sudo docker run --rm hello-world
+          sudo docker compose version
+
+      - name: Next steps
+        run: |
+          echo "=============================================================="
+          echo "Docker installed. You must now REBOOT the Pi (or restart the"
+          echo "self-hosted runner service) so your user picks up 'docker' group."
+          echo "After reboot, rerun your deploy workflow."
+          echo "=============================================================="
+
+    reboot:
+      runs-on: [self-hosted]
+      needs: [install-docker]
+      continue-on-error: true # Allow failure on this job
+      timeout-minutes: 1 # Prevent hanging indefinitely
+      steps:
+        - name: Restart Raspberry Pi
+          run: |
+            sudo reboot  # Reboot happens after the deploy job finishes

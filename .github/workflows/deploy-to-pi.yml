@@ -60,7 +60,7 @@ jobs:
 
   reboot:
     runs-on: [self-hosted]
-    needs: deploy
+    needs: [deploy, deploy-backend]
     continue-on-error: true # Allow failure on this job
     timeout-minutes: 1 # Prevent hanging indefinitely
     steps:
