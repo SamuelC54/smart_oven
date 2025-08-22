@@ -42,12 +42,12 @@ jobs:
           echo "After reboot, rerun your deploy workflow."
           echo "=============================================================="
 
-    reboot:
-      runs-on: [self-hosted]
-      needs: [install-docker]
-      continue-on-error: true # Allow failure on this job
-      timeout-minutes: 1 # Prevent hanging indefinitely
-      steps:
-        - name: Restart Raspberry Pi
-          run: |
-            sudo reboot  # Reboot happens after the deploy job finishes
+  reboot:
+    runs-on: [self-hosted]
+    needs: [install-docker]
+    continue-on-error: true # Allow failure on this job
+    timeout-minutes: 1 # Prevent hanging indefinitely
+    steps:
+      - name: Restart Raspberry Pi
+        run: |
+          sudo reboot  # Reboot happens after the deploy job finishes
