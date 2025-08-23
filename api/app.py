@@ -1,10 +1,19 @@
 import os
 import asyncio
+import logging
+import io
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-import board, busio, digitalio
-import adafruit_max31865
+# Set up logging with memory handler
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Create a memory handler to capture logs
+log_buffer = io.StringIO()
+memory_handler = logging.StreamHandler(log_buffer)
+memory_handler.setLevel(logging.INFO)
+logger.addHandler(memory_handler)
 
 app = FastAPI(title="Pi Sensor/GPIO API (Docker)")
 
