@@ -6,7 +6,7 @@ on:
       - "frontend/**"
       - "deploy/**"
       - "api/**"
-      - ".github/workflows/**"
+      - ".github/workflows/deploy-to-pi.yml"
       - ".github/actions/**"
 
 jobs:
@@ -30,8 +30,8 @@ jobs:
 
           # Check for frontend changes
           if echo "$CHANGED_FILES" | grep -q "frontend/" || \
-             echo "$CHANGED_FILES" | grep -q ".github/workflows/" || \
-             echo "$CHANGED_FILES" | grep -q ".github/actions/"; then
+             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-to-pi\.yml" || \
+             echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
             echo "frontend=true" >> $GITHUB_OUTPUT
           else
             echo "frontend=false" >> $GITHUB_OUTPUT
@@ -39,8 +39,8 @@ jobs:
 
           # Check for systemd changes
           if echo "$CHANGED_FILES" | grep -q "deploy/" || \
-             echo "$CHANGED_FILES" | grep -q ".github/workflows/" || \
-             echo "$CHANGED_FILES" | grep -q ".github/actions/"; then
+             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-to-pi\.yml" || \
+             echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
             echo "systemd=true" >> $GITHUB_OUTPUT
           else
             echo "systemd=false" >> $GITHUB_OUTPUT
@@ -48,8 +48,8 @@ jobs:
 
           # Check for api changes
           if echo "$CHANGED_FILES" | grep -q "api/" || \
-             echo "$CHANGED_FILES" | grep -q ".github/workflows/" || \
-             echo "$CHANGED_FILES" | grep -q ".github/actions/"; then
+             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-to-pi\.yml" || \
+             echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
             echo "api=true" >> $GITHUB_OUTPUT
           else
             echo "api=false" >> $GITHUB_OUTPUT

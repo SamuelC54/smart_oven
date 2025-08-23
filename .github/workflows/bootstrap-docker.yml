@@ -1,68 +1,208 @@
-name: Bootstrap Docker on Pi
+name: Setup Raspberry Pi
 on:
   workflow_dispatch:
 
 jobs:
-  install-docker:
+  bootstrap:
     runs-on: [self-hosted]
+    outputs:
+      needs-reboot: ${{ steps.check-reboot.outputs.needs-reboot }}
     steps:
-      - name: Who am I?
+      - name: Check current system
         run: |
-          whoami
-          id
+          echo "=== System Information ==="
+          echo "Device Model: $(cat /proc/device-tree/model 2>/dev/null || echo 'Unknown')"
+          echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
+          echo "Architecture: $(uname -m)"
+          echo "Kernel: $(uname -r)"
+          echo ""
 
-      - name: Install Docker Engine (rootful)
+      - name: Check current SPI status
         run: |
-          # Requires passwordless sudo for the runner user
-          curl -fsSL https://get.docker.com | sudo sh
-          sudo systemctl enable --now docker
+          echo "=== Current SPI Status ==="
+          echo "SPI devices:"
+          ls -la /dev/spidev* 2>/dev/null || echo "No SPI devices found"
+          echo ""
+          echo "SPI kernel modules:"
+          lsmod | grep spi || echo "No SPI modules loaded"
+          echo ""
+          echo "SPI config in /boot/config.txt:"
+          grep -i spi /boot/config.txt 2>/dev/null || echo "No SPI config found"
+          echo ""
 
-      - name: Install Compose plugin
+      - name: Install Docker
         run: |
+          echo "Installing Docker..."
+          # Remove old versions
+          sudo apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+
+          # Update package index
           sudo apt-get update
-          sudo apt-get install -y docker-compose-plugin
 
-      - name: Add runner user to docker group
+          # Install prerequisites
+          sudo apt-get install -y ca-certificates curl gnupg lsb-release
+
+          # Add Docker's official GPG key
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+          # Set up repository
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+          # Install Docker
+          sudo apt-get update
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+          echo "Docker installed successfully"
+
+      - name: Add user to docker group
         run: |
           USERNAME="$(id -un)"
           sudo usermod -aG docker "$USERNAME"
           echo "Added $USERNAME to docker group."
 
       - name: Enable SPI interface
+        id: enable-spi
         run: |
-          # Enable SPI interface using raspi-config non-interactive mode
-          echo "Enabling SPI interface..."
-          sudo raspi-config nonint do_spi 0
-          echo "SPI interface enabled successfully"
+          echo "=== Enabling SPI Interface ==="
 
-      - name: Verify SPI devices
+          # Check if SPI is already enabled
+          if grep -q "dtparam=spi=on" /boot/config.txt; then
+            echo "SPI is already enabled in config.txt"
+            echo "spi_already_enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "Enabling SPI interface..."
+            # Add SPI enable line to config.txt
+            echo "dtparam=spi=on" | sudo tee -a /boot/config.txt
+            echo "SPI interface enabled in config.txt"
+            echo "spi_enabled=true" >> $GITHUB_OUTPUT
+          fi
+
+          # Also check for any existing SPI overlays
+          echo "Current SPI-related config:"
+          grep -i spi /boot/config.txt || echo "No SPI config found"
+
+      - name: Enable I2C interface (optional, for future use)
+        id: enable-i2c
         run: |
-          echo "Checking for SPI devices..."
-          ls -la /dev/spidev* || echo "SPI devices not found yet (may need reboot)"
-          echo "Checking SPI kernel modules..."
-          lsmod | grep spi || echo "SPI modules not loaded yet"
+          echo "=== Enabling I2C Interface ==="
 
-      - name: Sanity check (using sudo; group not active yet)
+          # Check if I2C is already enabled
+          if grep -q "dtparam=i2c_arm=on" /boot/config.txt; then
+            echo "I2C is already enabled in config.txt"
+            echo "i2c_already_enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "Enabling I2C interface..."
+            # Add I2C enable line to config.txt
+            echo "dtparam=i2c_arm=on" | sudo tee -a /boot/config.txt
+            echo "I2C interface enabled in config.txt"
+            echo "i2c_enabled=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify configuration changes
         run: |
-          sudo docker info
-          sudo docker run --rm hello-world
-          sudo docker compose version
+          echo "=== Configuration Verification ==="
+          echo "Current /boot/config.txt SPI and I2C settings:"
+          grep -E "(spi|i2c)" /boot/config.txt || echo "No SPI/I2C settings found"
+          echo ""
+          echo "Full config.txt (last 20 lines):"
+          tail -20 /boot/config.txt
 
-      - name: Next steps
+      - name: Check current GPIO and SPI status
+        run: |
+          echo "=== Current Hardware Status ==="
+          echo "GPIO chips available:"
+          ls -la /sys/class/gpio/ 2>/dev/null || echo "GPIO sysfs not accessible"
+          echo ""
+          echo "SPI devices:"
+          ls -la /dev/spidev* 2>/dev/null || echo "No SPI devices found (normal before reboot)"
+          echo ""
+          echo "I2C devices:"
+          ls -la /dev/i2c* 2>/dev/null || echo "No I2C devices found (normal before reboot)"
+
+      - name: Determine if reboot is needed
+        id: check-reboot
+        run: |
+          echo "=== Checking if reboot is needed ==="
+
+          # Check if any hardware interfaces were enabled
+          SPI_ENABLED="${{ steps.enable-spi.outputs.spi_enabled }}"
+          I2C_ENABLED="${{ steps.enable-i2c.outputs.i2c_enabled }}"
+
+          # Check if SPI devices are missing (indicates need for reboot)
+          SPI_DEVICES_MISSING=false
+          if [ ! -e "/dev/spidev0.0" ] && [ ! -e "/dev/spidev0.1" ]; then
+            SPI_DEVICES_MISSING=true
+          fi
+
+          # Check if I2C devices are missing
+          I2C_DEVICES_MISSING=false
+          if [ ! -e "/dev/i2c-1" ]; then
+            I2C_DEVICES_MISSING=true
+          fi
+
+          # Determine if reboot is needed
+          NEEDS_REBOOT=false
+          REBOOT_REASONS=()
+
+          if [ "$SPI_ENABLED" = "true" ]; then
+            NEEDS_REBOOT=true
+            REBOOT_REASONS+=("SPI was enabled")
+          fi
+
+          if [ "$I2C_ENABLED" = "true" ]; then
+            NEEDS_REBOOT=true
+            REBOOT_REASONS+=("I2C was enabled")
+          fi
+
+          if [ "$SPI_DEVICES_MISSING" = "true" ] && grep -q "dtparam=spi=on" /boot/config.txt; then
+            NEEDS_REBOOT=true
+            REBOOT_REASONS+=("SPI devices missing")
+          fi
+
+          if [ "$I2C_DEVICES_MISSING" = "true" ] && grep -q "dtparam=i2c_arm=on" /boot/config.txt; then
+            NEEDS_REBOOT=true
+            REBOOT_REASONS+=("I2C devices missing")
+          fi
+
+          # Set output
+          if [ "$NEEDS_REBOOT" = "true" ]; then
+            echo "needs-reboot=true" >> $GITHUB_OUTPUT
+            echo "Reboot needed for: ${REBOOT_REASONS[*]}"
+          else
+            echo "needs-reboot=false" >> $GITHUB_OUTPUT
+            echo "No reboot needed - all hardware interfaces are working"
+          fi
+
+      - name: Setup summary
         run: |
           echo "=============================================================="
-          echo "Docker installed and SPI enabled. You must now REBOOT the Pi"
-          echo "(or restart the self-hosted runner service) so your user picks"
-          echo "up 'docker' group and SPI devices are available."
-          echo "After reboot, rerun your deploy workflow."
+          echo "Setup completed successfully!"
+          echo ""
+          if [ "${{ steps.check-reboot.outputs.needs-reboot }}" = "true" ]; then
+            echo "REBOOT REQUIRED: Hardware interfaces need to be activated"
+            echo "The Pi will reboot automatically in the next step."
+          else
+            echo "No reboot needed - everything is working!"
+          fi
+          echo ""
+          echo "After setup, verify everything is working:"
+          echo "  ls -la /dev/spidev*"
+          echo "  lsmod | grep spi"
+          echo "  docker --version"
           echo "=============================================================="
 
   reboot:
     runs-on: [self-hosted]
-    needs: [install-docker]
-    continue-on-error: true # Allow failure on this job
-    timeout-minutes: 1 # Prevent hanging indefinitely
+    needs: bootstrap
+    if: needs.bootstrap.outputs.needs-reboot == 'true'
+    continue-on-error: true
+    timeout-minutes: 1
     steps:
-      - name: Restart Raspberry Pi
-        run: |
-          sudo reboot  # Reboot happens after the deploy job finishes
+      - uses: actions/checkout@v4
+
+      - name: Reboot Raspberry Pi
+        uses: ./.github/actions/reboot-pi.yml
+        with:
+          reason: "Hardware interfaces (SPI/I2C) were enabled. Rebooting to activate them."
+          wait_seconds: "5"
