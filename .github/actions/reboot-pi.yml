@@ -1,0 +1,31 @@
+name: "Reboot Raspberry Pi"
+description: "Reboots the Raspberry Pi with configurable reason and wait time"
+
+inputs:
+  reason:
+    description: "Reason for the reboot"
+    required: false
+    default: "Manual reboot requested"
+  wait_seconds:
+    description: "Seconds to wait before rebooting"
+    required: false
+    default: "10"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Wait before reboot
+      shell: bash
+      run: |
+        echo "Waiting ${{ inputs.wait_seconds }} seconds before rebooting..."
+        sleep ${{ inputs.wait_seconds }}
+
+    - name: Restart Raspberry Pi
+      shell: bash
+      run: |
+        echo "=========================================="
+        echo "${{ inputs.reason }}"
+        echo "Restarting Pi..."
+        echo "This will restart all services."
+        echo "=========================================="
+        sudo reboot

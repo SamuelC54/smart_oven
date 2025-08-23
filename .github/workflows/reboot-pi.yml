@@ -1,0 +1,15 @@
+name: Manual Reboot Raspberry Pi
+on:
+  workflow_dispatch:
+
+jobs:
+  reboot:
+    runs-on: [self-hosted]
+    continue-on-error: true # Allow failure on this job
+    timeout-minutes: 1 # Prevent hanging indefinitely
+    steps:
+      - name: Reboot Raspberry Pi
+        uses: ./.github/actions/reboot-pi.yml
+        with:
+          reason: "Manual reboot requested"
+          wait_seconds: "0"

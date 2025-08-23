@@ -2,10 +2,16 @@ name: Deploy to Raspberry Pi
 on:
   push:
     branches: [main]
+    paths:
+      - "frontend/**"
+      - "deploy/**"
+      - "api/**"
+      - ".github/workflows/**"
 
 jobs:
-  deploy:
+  frontend:
     runs-on: [self-hosted]
+    if: "contains(github.event.head_commit.modified, 'frontend/') || contains(github.event.head_commit.modified, '.github/workflows/')"
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +31,12 @@ jobs:
           sudo mkdir -p /home/smart-oven/frontend
           sudo cp -r ./frontend/dist/* /home/smart-oven/frontend/
 
+  systemd:
+    runs-on: [self-hosted]
+    if: "contains(github.event.head_commit.modified, 'deploy/') || contains(github.event.head_commit.modified, '.github/workflows/')"
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Install/Update systemd units from repo
         run: |
           # Copy unit files from the repo into systemd dir
@@ -41,8 +53,9 @@ jobs:
           sudo systemctl enable oven-kiosk.service
           sudo systemctl enable github-actions-runner.service
 
-  deploy-backend:
+  api:
     runs-on: [self-hosted]
+    if: "contains(github.event.head_commit.modified, 'api/') || contains(github.event.head_commit.modified, '.github/workflows/')"
     steps:
       - uses: actions/checkout@v4
 
@@ -100,10 +113,13 @@ jobs:
 
   reboot:
     runs-on: [self-hosted]
-    needs: [deploy, deploy-backend]
+    needs: [frontend, systemd, api]
+    if: always() && needs.systemd.result == 'success'
     continue-on-error: true # Allow failure on this job
     timeout-minutes: 1 # Prevent hanging indefinitely
     steps:
-      - name: Restart Raspberry Pi
-        run: |
-          sudo reboot  # Reboot happens after the deploy job finishes
+      - name: Reboot Raspberry Pi
+        uses: ./.github/actions/reboot-pi.yml
+        with:
+          reason: "Systemd configuration changed. Rebooting Pi to restart all services with new configs."
+          wait_seconds: "10"
