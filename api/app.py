@@ -2,17 +2,25 @@ import os
 import asyncio
 import logging
 import io
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Set up logging with memory handler
-logging.basicConfig(level=logging.INFO)
+# Set up logging with memory handler and timestamp format
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 logger = logging.getLogger(__name__)
 
 # Create a memory handler to capture logs
 log_buffer = io.StringIO()
 memory_handler = logging.StreamHandler(log_buffer)
 memory_handler.setLevel(logging.INFO)
+# Use the same format for memory handler
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+memory_handler.setFormatter(formatter)
 logger.addHandler(memory_handler)
 
 app = FastAPI(title="Pi Sensor/GPIO API (Docker)")
@@ -108,7 +116,19 @@ def get_logs():
     """Get recent application logs for debugging"""
     log_buffer.seek(0)
     logs = log_buffer.read()
-    return {"logs": logs}
+    # Split logs into lines and format them nicely
+    log_lines = logs.strip().split('\n')
+    formatted_logs = []
+    for line in log_lines:
+        if line.strip():  # Skip empty lines
+            formatted_logs.append(line)
+    
+    return {
+        "logs": formatted_logs,
+        "raw_logs": logs,
+        "log_count": len(formatted_logs),
+        "timestamp": datetime.now().isoformat()
+    }
 
 @app.get("/health")
 def health():
