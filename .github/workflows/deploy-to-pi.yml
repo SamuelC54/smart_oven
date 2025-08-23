@@ -75,6 +75,25 @@ jobs:
           echo "=== End Container Status ==="
         continue-on-error: true
 
+      - name: Expose API for external access
+        run: |
+          # Allow incoming connections on port 8081
+          sudo ufw allow 8081/tcp
+
+          # Get Pi's IP address
+          PI_IP=$(hostname -I | awk '{print $1}')
+
+          echo "=========================================="
+          echo "API is now accessible from external devices:"
+          echo "http://$PI_IP:8081/"
+          echo "http://$PI_IP:8081/health"
+          echo "http://$PI_IP:8081/logs"
+          echo "=========================================="
+
+          # Show firewall status
+          echo "Firewall status:"
+          sudo ufw status | grep 8081 || echo "Port 8081 not in firewall rules"
+
       - name: Smoke test
         run: |
           curl -sSf http://127.0.0.1:8081/health
