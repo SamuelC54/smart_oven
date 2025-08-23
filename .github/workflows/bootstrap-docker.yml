@@ -28,6 +28,20 @@ jobs:
           sudo usermod -aG docker "$USERNAME"
           echo "Added $USERNAME to docker group."
 
+      - name: Enable SPI interface
+        run: |
+          # Enable SPI interface using raspi-config non-interactive mode
+          echo "Enabling SPI interface..."
+          sudo raspi-config nonint do_spi 0
+          echo "SPI interface enabled successfully"
+
+      - name: Verify SPI devices
+        run: |
+          echo "Checking for SPI devices..."
+          ls -la /dev/spidev* || echo "SPI devices not found yet (may need reboot)"
+          echo "Checking SPI kernel modules..."
+          lsmod | grep spi || echo "SPI modules not loaded yet"
+
       - name: Sanity check (using sudo; group not active yet)
         run: |
           sudo docker info
@@ -37,8 +51,9 @@ jobs:
       - name: Next steps
         run: |
           echo "=============================================================="
-          echo "Docker installed. You must now REBOOT the Pi (or restart the"
-          echo "self-hosted runner service) so your user picks up 'docker' group."
+          echo "Docker installed and SPI enabled. You must now REBOOT the Pi"
+          echo "(or restart the self-hosted runner service) so your user picks"
+          echo "up 'docker' group and SPI devices are available."
           echo "After reboot, rerun your deploy workflow."
           echo "=============================================================="
 
