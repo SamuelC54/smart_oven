@@ -218,6 +218,85 @@ def test_gpio_access():
         }
     }
 
+@app.get("/spi-status")
+def get_spi_status():
+    """Check SPI status and provide troubleshooting info"""
+    logger.info("SPI status requested")
+    
+    spi_info = {}
+    
+    try:
+        # Check if SPI devices exist
+        spi_result = subprocess.run(['ls', '/dev/spidev*'], capture_output=True, text=True, timeout=10)
+        if spi_result.returncode == 0:
+            spi_info['devices'] = spi_result.stdout.strip().split('\n')
+        else:
+            spi_info['devices'] = []
+        
+        # Check SPI kernel modules
+        try:
+            modules_result = subprocess.run(['lsmod'], capture_output=True, text=True, timeout=10)
+            if modules_result.returncode == 0:
+                spi_modules = []
+                for line in modules_result.stdout.split('\n'):
+                    if 'spi' in line.lower():
+                        spi_modules.append(line.strip())
+                spi_info['kernel_modules'] = spi_modules
+            else:
+                spi_info['kernel_modules'] = ["Failed to check kernel modules"]
+        except:
+            spi_info['kernel_modules'] = ["Failed to check kernel modules"]
+        
+        # Check if we're on a Raspberry Pi
+        try:
+            model_result = subprocess.run(['cat', '/proc/device-tree/model'], capture_output=True, text=True, timeout=5)
+            if model_result.returncode == 0:
+                spi_info['device_model'] = model_result.stdout.strip()
+            else:
+                spi_info['device_model'] = "Unknown"
+        except:
+            spi_info['device_model'] = "Unknown"
+        
+        # Check if SPI is enabled in config
+        try:
+            config_result = subprocess.run(['cat', '/boot/config.txt'], capture_output=True, text=True, timeout=10)
+            if config_result.returncode == 0:
+                spi_enabled = 'dtparam=spi=on' in config_result.stdout
+                spi_info['spi_enabled_in_config'] = spi_enabled
+                if not spi_enabled:
+                    spi_info['config_help'] = "SPI not enabled. Add 'dtparam=spi=on' to /boot/config.txt and reboot"
+            else:
+                spi_info['spi_enabled_in_config'] = "Could not check config.txt"
+        except:
+            spi_info['spi_enabled_in_config'] = "Could not check config.txt"
+        
+        # Check device tree overlays
+        try:
+            if 'spi_enabled_in_config' in spi_info and spi_info['spi_enabled_in_config'] == True:
+                overlay_result = subprocess.run(['vcgencmd', 'get_config', 'str', 'dtoverlay'], capture_output=True, text=True, timeout=10)
+                if overlay_result.returncode == 0:
+                    spi_info['dtoverlay'] = overlay_result.stdout.strip()
+                else:
+                    spi_info['dtoverlay'] = "No overlays or could not check"
+            else:
+                spi_info['dtoverlay'] = "SPI not enabled in config"
+        except:
+            spi_info['dtoverlay'] = "Could not check overlays"
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "spi_info": spi_info,
+            "troubleshooting": {
+                "spi_devices_missing": len(spi_info.get('devices', [])) == 0,
+                "needs_reboot": len(spi_info.get('devices', [])) == 0 and spi_info.get('spi_enabled_in_config') == True,
+                "needs_config": spi_info.get('spi_enabled_in_config') == False
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get SPI status: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get SPI status: {e}")
+
 @app.get("/gpio-status")
 def get_gpio_status():
     """Get current GPIO status and usage information"""
