@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 import io
+import subprocess
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -18,7 +19,6 @@ logger = logging.getLogger(__name__)
 log_buffer = io.StringIO()
 memory_handler = logging.StreamHandler(log_buffer)
 memory_handler.setLevel(logging.INFO)
-# Use the same format for memory handler
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 memory_handler.setFormatter(formatter)
 logger.addHandler(memory_handler)
@@ -26,10 +26,10 @@ logger.addHandler(memory_handler)
 app = FastAPI(title="Pi Sensor/GPIO API (Docker)")
 
 # --- Config via env ---
-RTD_NOMINAL = float(os.getenv("SENSOR_RTD_NOMINAL", "100"))     # 100 for PT100, 1000 for PT1000
-REF_RESISTOR = float(os.getenv("SENSOR_REF_RESISTOR", "430"))   # Common: 430Ω (Adafruit breakout)
+RTD_NOMINAL = float(os.getenv("SENSOR_RTD_NOMINAL", "100"))           # PT100 = 100, PT1000 = 1000
+REF_RESISTOR = float(os.getenv("SENSOR_REF_RESISTOR", "430"))         # 430 for MAX31865 breakout
 WIRES = int(os.getenv("SENSOR_WIRES", "2"))                     # 2, 3, or 4
-CS_NAME = os.getenv("SENSOR_CS", "CE0").upper()                 # "CE0" or "CE1"
+CS_NAME = os.getenv("SENSOR_CS", "CE0")                         # CE0 or CE1
 
 logger.info(f"Starting Smart Oven API with config: RTD={RTD_NOMINAL}, REF={REF_RESISTOR}, WIRES={WIRES}, CS={CS_NAME}")
 
@@ -46,59 +46,58 @@ except Exception as e:
     logger.error(f"Unexpected error importing hardware libraries: {e}")
     HARDWARE_AVAILABLE = False
 
-# --- Lazy sensor init to avoid crash if bus is slow to appear ---
+# --- Global sensor instance ---
 _sensor = None
+
 def get_sensor():
     global _sensor
     if not HARDWARE_AVAILABLE:
-        logger.error("Hardware not available, cannot initialize sensor")
         raise Exception("Hardware libraries not available")
     
     if _sensor is None:
+        logger.info("Initializing SPI and sensor...")
         try:
-            logger.info("Initializing SPI and sensor...")
-            spi = busio.SPI(board.SCLK, board.MOSI, board.MISO)
-            cs_pin = board.CE0 if CS_NAME == "CE0" else board.CE1
-            cs = digitalio.DigitalInOut(cs_pin)
-            _sensor = adafruit_max31865.MAX31865(
-                spi, cs,
-                rtd_nominal=RTD_NOMINAL,
-                ref_resistor=REF_RESISTOR,
-                wires=WIRES,
-            )
+            # Map CS name to actual pin
+            if CS_NAME == "CE0":
+                cs = digitalio.DigitalInOut(board.CE0)
+            elif CS_NAME == "CE1":
+                cs = digitalio.DigitalInOut(board.CE1)
+            else:
+                raise ValueError(f"Invalid CS name: {CS_NAME}")
+            
+            spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
+            _sensor = adafruit_max31865.MAX31865(spi, cs, rtd_nominal=RTD_NOMINAL, ref_resistor=REF_RESISTOR, wires=WIRES)
             logger.info("Sensor initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize sensor: {e}")
             raise
+    
     return _sensor
 
-def set_gpio(bcm_pin: int, value: bool):
+def set_gpio(pin: int, state: bool):
     if not HARDWARE_AVAILABLE:
-        logger.error("Hardware not available, cannot set GPIO")
         raise Exception("Hardware libraries not available")
     
     try:
-        logger.info(f"Setting GPIO{bcm_pin} to {'HIGH' if value else 'LOW'}")
-        # Use BCM number with Blinka mapping (board.D17 == GPIO17)
-        pin = getattr(board, f"D{bcm_pin}")
-        io = digitalio.DigitalInOut(pin)
-        io.direction = digitalio.Direction.OUTPUT
-        io.value = value
-        logger.info(f"GPIO{bcm_pin} set successfully")
-    except AttributeError:
-        logger.error(f"GPIO{bcm_pin} is not available on this board")
-        raise ValueError(f"GPIO{bcm_pin} is not available on this board")
+        # Map pin number to board pin
+        if pin == 18:
+            gpio_pin = board.D18
+        elif pin == 23:
+            gpio_pin = board.D23
+        elif pin == 24:
+            gpio_pin = board.D24
+        elif pin == 25:
+            gpio_pin = board.D25
+        else:
+            raise ValueError(f"Unsupported GPIO pin: {pin}")
+        
+        pin_obj = digitalio.DigitalInOut(gpio_pin)
+        pin_obj.direction = digitalio.Direction.OUTPUT
+        pin_obj.value = state
+        logger.info(f"GPIO {pin} set to {state}")
     except Exception as e:
-        logger.error(f"Failed to set GPIO{bcm_pin}: {e}")
+        logger.error(f"Failed to set GPIO {pin}: {e}")
         raise
-    finally:
-        try:
-            io.deinit()
-        except:
-            pass
-
-class GpioBody(BaseModel):
-    value: bool  # true=HIGH, false=LOW
 
 @app.on_event("startup")
 async def startup_event():
@@ -116,13 +115,12 @@ def get_logs():
     """Get recent application logs for debugging"""
     log_buffer.seek(0)
     logs = log_buffer.read()
-    # Split logs into lines and format them nicely
     log_lines = logs.strip().split('\n')
     formatted_logs = []
     for line in log_lines:
-        if line.strip():  # Skip empty lines
+        if line.strip():
             formatted_logs.append(line)
-    
+
     return {
         "logs": formatted_logs,
         "raw_logs": logs,
@@ -139,30 +137,76 @@ def health():
         "sensor_initialized": _sensor is not None
     }
 
+@app.get("/gpio-status")
+def get_gpio_status():
+    """Get current GPIO status and usage information"""
+    logger.info("GPIO status requested")
+    
+    try:
+        # Get GPIO pin states using raspi-gpio
+        result = subprocess.run(['raspi-gpio', 'get'], capture_output=True, text=True, timeout=10)
+        gpio_states = result.stdout if result.returncode == 0 else "Failed to get GPIO states"
+        
+        # Get processes using gpiomem
+        gpiomem_result = subprocess.run(['lsof', '/dev/gpiomem'], capture_output=True, text=True, timeout=10)
+        gpiomem_usage = gpiomem_result.stdout if gpiomem_result.returncode == 0 else "No processes using gpiomem"
+        
+        # Get SPI device status
+        spi_devices = []
+        try:
+            spi_result = subprocess.run(['ls', '-la', '/dev/spidev*'], capture_output=True, text=True, timeout=10)
+            if spi_result.returncode == 0:
+                spi_devices = spi_result.stdout.strip().split('\n')
+        except:
+            spi_devices = ["Failed to check SPI devices"]
+        
+        # Get current sensor configuration
+        sensor_config = {
+            "rtd_nominal": RTD_NOMINAL,
+            "ref_resistor": REF_RESISTOR,
+            "wires": WIRES,
+            "cs_name": CS_NAME,
+            "sensor_initialized": _sensor is not None
+        }
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "gpio_states": gpio_states,
+            "gpiomem_usage": gpiomem_usage,
+            "spi_devices": spi_devices,
+            "sensor_config": sensor_config,
+            "hardware_available": HARDWARE_AVAILABLE
+        }
+        
+    except subprocess.TimeoutExpired:
+        logger.error("Timeout getting GPIO status")
+        raise HTTPException(status_code=500, detail="Timeout getting GPIO status")
+    except Exception as e:
+        logger.error(f"Failed to get GPIO status: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get GPIO status: {e}")
+
 @app.get("/temp")
-def temp():
+def get_temp():
     logger.info("Temperature reading requested")
     try:
-        s = get_sensor()
-        temp_c = s.temperature
-        resistance = s.resistance
-        logger.info(f"Temperature: {temp_c}°C, Resistance: {resistance}Ω")
-        return {"celsius": temp_c, "ohms": resistance}
+        sensor = get_sensor()
+        temp = sensor.temperature
+        logger.info(f"Temperature: {temp}°C")
+        return {"temperature": temp, "unit": "celsius"}
     except Exception as e:
         logger.error(f"Failed to read temperature: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/gpio/{bcm_pin}")
-async def gpio(bcm_pin: int, body: GpioBody):
-    logger.info(f"GPIO{bcm_pin} control requested: {body.value}")
+class GPIORequest(BaseModel):
+    pin: int
+    state: bool
+
+@app.post("/gpio")
+def set_gpio_endpoint(request: GPIORequest):
+    logger.info(f"GPIO control requested: pin {request.pin} -> {request.state}")
     try:
-        await asyncio.sleep(0)
-        set_gpio(bcm_pin, body.value)
-        logger.info(f"GPIO{bcm_pin} set to {body.value} successfully")
-        return {"pin": bcm_pin, "set": body.value}
-    except ValueError as ve:
-        logger.error(f"GPIO{bcm_pin} error: {ve}")
-        raise HTTPException(status_code=400, detail=str(ve))
+        set_gpio(request.pin, request.state)
+        return {"message": f"GPIO {request.pin} set to {request.state}"}
     except Exception as e:
-        logger.error(f"GPIO{bcm_pin} unexpected error: {e}")
+        logger.error(f"Failed to set GPIO {request.pin}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
