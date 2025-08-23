@@ -55,6 +55,26 @@ jobs:
           docker compose down || true
           docker compose up -d --build
 
+      - name: Wait for container to start
+        run: |
+          sleep 15
+
+      - name: Get container logs
+        working-directory: ./api
+        run: |
+          echo "=== Container Logs ==="
+          docker compose logs api
+          echo "=== End Container Logs ==="
+        continue-on-error: true
+
+      - name: Check container status
+        working-directory: ./api
+        run: |
+          echo "=== Container Status ==="
+          docker compose ps
+          echo "=== End Container Status ==="
+        continue-on-error: true
+
       - name: Smoke test
         run: |
           curl -sSf http://127.0.0.1:8081/health
