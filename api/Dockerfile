@@ -10,11 +10,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY api ./api
+COPY . .
 
 # Expose API port
 ENV PORT=8081
 EXPOSE 8081
 
 # Uvicorn (no reload in container)
-CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8081"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8081"]
