@@ -77,8 +77,8 @@ jobs:
 
       - name: Expose API for external access
         run: |
-          # Allow incoming connections on port 8081
-          sudo ufw allow 8081/tcp
+          # Allow incoming connections on port 8081 using iptables
+          sudo iptables -A INPUT -p tcp --dport 8081 -j ACCEPT
 
           # Get Pi's IP address
           PI_IP=$(hostname -I | awk '{print $1}')
@@ -90,9 +90,9 @@ jobs:
           echo "http://$PI_IP:8081/logs"
           echo "=========================================="
 
-          # Show firewall status
-          echo "Firewall status:"
-          sudo ufw status | grep 8081 || echo "Port 8081 not in firewall rules"
+          # Show iptables rules for port 8081
+          echo "Firewall rules for port 8081:"
+          sudo iptables -L INPUT -n | grep 8081 || echo "Port 8081 rule added"
 
       - name: Smoke test
         run: |
