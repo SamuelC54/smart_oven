@@ -201,8 +201,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Reboot Raspberry Pi
-        uses: ./.github/actions/reboot-pi.yml
+             - name: Reboot Raspberry Pi
+         uses: ./.github/actions/reboot-pi
         with:
           reason: "Hardware interfaces (SPI/I2C) were enabled. Rebooting to activate them."
           wait_seconds: "5"

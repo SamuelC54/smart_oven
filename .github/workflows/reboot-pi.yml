@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 1 # Prevent hanging indefinitely
     steps:
       - name: Reboot Raspberry Pi
-        uses: ./.github/actions/reboot-pi.yml
+        uses: ./.github/actions/reboot-pi
         with:
           reason: "Manual reboot requested"
           wait_seconds: "0"
