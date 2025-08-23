@@ -35,12 +35,31 @@ jobs:
           sudo raspi-config nonint do_spi 0
           echo "SPI interface enabled successfully"
 
-      - name: Verify SPI devices
+      - name: Enable GPIO interface
+        run: |
+          # Enable GPIO interface using raspi-config non-interactive mode
+          echo "Enabling GPIO interface..."
+          sudo raspi-config nonint do_gpio 0
+          echo "GPIO interface enabled successfully"
+
+      - name: Set up GPIO permissions
+        run: |
+          # Ensure gpio group exists and add user to it
+          sudo groupadd -f gpio
+          USERNAME="$(id -un)"
+          sudo usermod -aG gpio "$USERNAME"
+          echo "Added $USERNAME to gpio group."
+
+      - name: Verify hardware devices
         run: |
           echo "Checking for SPI devices..."
           ls -la /dev/spidev* || echo "SPI devices not found yet (may need reboot)"
+          echo "Checking for GPIO device..."
+          ls -la /dev/gpiomem || echo "GPIO device not found yet (may need reboot)"
           echo "Checking SPI kernel modules..."
           lsmod | grep spi || echo "SPI modules not loaded yet"
+          echo "Checking GPIO kernel modules..."
+          lsmod | grep gpio || echo "GPIO modules not loaded yet"
 
       - name: Sanity check (using sudo; group not active yet)
         run: |
@@ -51,10 +70,10 @@ jobs:
       - name: Next steps
         run: |
           echo "=============================================================="
-          echo "Docker installed and SPI enabled. You must now REBOOT the Pi"
-          echo "(or restart the self-hosted runner service) so your user picks"
-          echo "up 'docker' group and SPI devices are available."
-          echo "After reboot, rerun your deploy workflow."
+          echo "Docker installed, SPI and GPIO enabled. You must now REBOOT"
+          echo "the Pi (or restart the self-hosted runner service) so your"
+          echo "user picks up 'docker' and 'gpio' groups and hardware devices"
+          echo "are available. After reboot, rerun your deploy workflow."
           echo "=============================================================="
 
   reboot:
