@@ -24,37 +24,32 @@ jobs:
       - name: Determine what changed
         id: changes
         run: |
+          # Get list of changed files using git diff
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }})
+          echo "Changed files: $CHANGED_FILES"
+
           # Check for frontend changes
-          if [[ "${{ github.event.head_commit.modified }}" == *"frontend/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *"frontend/"* ]] || \
-             [[ "${{ github.event.head_commit.modified }}" == *".github/workflows/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *".github/workflows/"* ]] || \
-             [[ "${{ github.event.head_commit.modified }}" == *".github/actions/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *".github/actions/"* ]]; then
+          if echo "$CHANGED_FILES" | grep -q "frontend/" || \
+             echo "$CHANGED_FILES" | grep -q ".github/workflows/" || \
+             echo "$CHANGED_FILES" | grep -q ".github/actions/"; then
             echo "frontend=true" >> $GITHUB_OUTPUT
           else
             echo "frontend=false" >> $GITHUB_OUTPUT
           fi
 
           # Check for systemd changes
-          if [[ "${{ github.event.head_commit.modified }}" == *"deploy/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *"deploy/"* ]] || \
-             [[ "${{ github.event.head_commit.modified }}" == *".github/workflows/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *".github/workflows/"* ]] || \
-             [[ "${{ github.event.head_commit.modified }}" == *".github/actions/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *".github/actions/"* ]]; then
+          if echo "$CHANGED_FILES" | grep -q "deploy/" || \
+             echo "$CHANGED_FILES" | grep -q ".github/workflows/" || \
+             echo "$CHANGED_FILES" | grep -q ".github/actions/"; then
             echo "systemd=true" >> $GITHUB_OUTPUT
           else
             echo "systemd=false" >> $GITHUB_OUTPUT
           fi
 
           # Check for api changes
-          if [[ "${{ github.event.head_commit.modified }}" == *"api/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *"api/"* ]] || \
-             [[ "${{ github.event.head_commit.modified }}" == *".github/workflows/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *".github/workflows/"* ]] || \
-             [[ "${{ github.event.head_commit.modified }}" == *".github/actions/"* ]] || \
-             [[ "${{ github.event.head_commit.added }}" == *".github/actions/"* ]]; then
+          if echo "$CHANGED_FILES" | grep -q "api/" || \
+             echo "$CHANGED_FILES" | grep -q ".github/workflows/" || \
+             echo "$CHANGED_FILES" | grep -q ".github/actions/"; then
             echo "api=true" >> $GITHUB_OUTPUT
           else
             echo "api=false" >> $GITHUB_OUTPUT
