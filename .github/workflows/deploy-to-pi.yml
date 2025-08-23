@@ -7,13 +7,35 @@ on:
       - "deploy/**"
       - "api/**"
       - ".github/workflows/**"
+      - ".github/actions/**"
+
+env:
+  # Detect if specific folders or workflow/action files were changed
+  FRONTEND_CHANGED: ${{ contains(github.event.head_commit.modified, 'frontend/') || contains(github.event.head_commit.added, 'frontend/') }}
+  DEPLOY_CHANGED: ${{ contains(github.event.head_commit.modified, 'deploy/') || contains(github.event.head_commit.added, 'deploy/') }}
+  API_CHANGED: ${{ contains(github.event.head_commit.modified, 'api/') || contains(github.event.head_commit.added, 'api/') }}
+  WORKFLOW_CHANGED: ${{ contains(github.event.head_commit.modified, '.github/workflows/') || contains(github.event.head_commit.added, '.github/workflows/') }}
+  ACTION_CHANGED: ${{ contains(github.event.head_commit.modified, '.github/actions/') || contains(github.event.head_commit.added, '.github/actions/') }}
+
+  # Combined conditions for each job
+  FRONTEND_JOB_SHOULD_RUN: ${{ contains(github.event.head_commit.modified, 'frontend/') || contains(github.event.head_commit.added, 'frontend/') || contains(github.event.head_commit.modified, '.github/workflows/') || contains(github.event.head_commit.added, '.github/workflows/') || contains(github.event.head_commit.modified, '.github/actions/') || contains(github.event.head_commit.added, '.github/actions/') }}
+  SYSTEMD_JOB_SHOULD_RUN: ${{ contains(github.event.head_commit.modified, 'deploy/') || contains(github.event.head_commit.added, 'deploy/') || contains(github.event.head_commit.modified, '.github/workflows/') || contains(github.event.head_commit.added, '.github/workflows/') || contains(github.event.head_commit.modified, '.github/actions/') || contains(github.event.head_commit.added, '.github/actions/') }}
+  API_JOB_SHOULD_RUN: ${{ contains(github.event.head_commit.modified, 'api/') || contains(github.event.head_commit.added, 'api/') || contains(github.event.head_commit.modified, '.github/workflows/') || contains(github.event.head_commit.added, '.github/workflows/') || contains(github.event.head_commit.modified, '.github/actions/') || contains(github.event.head_commit.added, '.github/actions/') }}
 
 jobs:
   debug:
     runs-on: [self-hosted]
     steps:
-      - name: Debug - Show modified files
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Debug - Show commit info
         run: |
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Previous commit: ${{ github.event.before }}"
+          echo "Current commit: ${{ github.event.after }}"
+          echo ""
           echo "Modified files in this commit:"
           echo "${{ github.event.head_commit.modified }}"
           echo ""
@@ -22,10 +44,24 @@ jobs:
           echo ""
           echo "Removed files in this commit:"
           echo "${{ github.event.head_commit.removed }}"
+          echo ""
+          echo "Files changed between commits:"
+          git diff --name-only ${{ github.event.before }} ${{ github.event.after }} || echo "Could not get diff"
+          echo ""
+          echo "=== Job Conditions ==="
+          echo "FRONTEND_CHANGED: ${{ env.FRONTEND_CHANGED }}"
+          echo "DEPLOY_CHANGED: ${{ env.DEPLOY_CHANGED }}"
+          echo "API_CHANGED: ${{ env.API_CHANGED }}"
+          echo "WORKFLOW_CHANGED: ${{ env.WORKFLOW_CHANGED }}"
+          echo "ACTION_CHANGED: ${{ env.ACTION_CHANGED }}"
+          echo ""
+          echo "FRONTEND_JOB_SHOULD_RUN: ${{ env.FRONTEND_JOB_SHOULD_RUN }}"
+          echo "SYSTEMD_JOB_SHOULD_RUN: ${{ env.SYSTEMD_JOB_SHOULD_RUN }}"
+          echo "API_JOB_SHOULD_RUN: ${{ env.API_JOB_SHOULD_RUN }}"
 
   frontend:
     runs-on: [self-hosted]
-    if: "contains(github.event.head_commit.modified, 'frontend/') || contains(github.event.head_commit.modified, '.github/workflows/') || contains(github.event.head_commit.modified, '.github/actions/')"
+    if: ${{ env.FRONTEND_JOB_SHOULD_RUN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +83,7 @@ jobs:
 
   systemd:
     runs-on: [self-hosted]
-    if: "contains(github.event.head_commit.modified, 'deploy/') || contains(github.event.head_commit.modified, '.github/workflows/') || contains(github.event.head_commit.modified, '.github/actions/')"
+    if: ${{ env.SYSTEMD_JOB_SHOULD_RUN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -69,7 +105,7 @@ jobs:
 
   api:
     runs-on: [self-hosted]
-    if: "contains(github.event.head_commit.modified, 'api/') || contains(github.event.head_commit.modified, '.github/workflows/') || contains(github.event.head_commit.modified, '.github/actions/')"
+    if: ${{ env.API_JOB_SHOULD_RUN }}
     steps:
       - uses: actions/checkout@v4
 
