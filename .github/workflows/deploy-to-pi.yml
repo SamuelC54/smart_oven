@@ -192,8 +192,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-             - name: Reboot Raspberry Pi
-         uses: ./.github/actions/reboot-pi
+      - name: Reboot Raspberry Pi
+        uses: ./.github/actions/reboot-pi
         with:
           reason: "Systemd configuration changed. Rebooting Pi to restart all services with new configs."
           wait_seconds: "10"
