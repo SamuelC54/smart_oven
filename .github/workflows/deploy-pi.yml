@@ -6,7 +6,7 @@ on:
       - "frontend/**"
       - "deploy/**"
       - "api/**"
-      - ".github/workflows/deploy-to-pi.yml"
+      - ".github/workflows/deploy-pi.yml"
       - ".github/actions/**"
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
 
           # Check for frontend changes
           if echo "$CHANGED_FILES" | grep -q "frontend/" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-to-pi\.yml" || \
+             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-pi\.yml" || \
              echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
             echo "frontend=true" >> $GITHUB_OUTPUT
           else
@@ -39,7 +39,7 @@ jobs:
 
           # Check for systemd changes
           if echo "$CHANGED_FILES" | grep -q "deploy/" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-to-pi\.yml" || \
+             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-pi\.yml" || \
              echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
             echo "systemd=true" >> $GITHUB_OUTPUT
           else
@@ -48,7 +48,7 @@ jobs:
 
           # Check for api changes
           if echo "$CHANGED_FILES" | grep -q "api/" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-to-pi\.yml" || \
+             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-pi\.yml" || \
              echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
             echo "api=true" >> $GITHUB_OUTPUT
           else
