@@ -224,10 +224,6 @@ def get_gpio_status():
     logger.info("GPIO status requested")
     
     try:
-        # Get processes using gpiomem
-        gpiomem_result = subprocess.run(['lsof', '/dev/gpiomem'], capture_output=True, text=True, timeout=10)
-        gpiomem_usage = gpiomem_result.stdout if gpiomem_result.returncode == 0 else "No processes using gpiomem"
-        
         # Get SPI device status
         spi_devices = []
         try:
@@ -251,7 +247,7 @@ def get_gpio_status():
         
         # Check if specific GPIO pins are exported
         try:
-            for pin in [8, 9, 10, 11]:  # SPI pins
+            for pin in [7, 8, 9, 10, 11]:  # SPI pins (added GPIO 7 for CE1)
                 pin_result = subprocess.run(['ls', f'/sys/class/gpio/gpio{pin}'], capture_output=True, text=True, timeout=5)
                 gpio_info[f'gpio{pin}_exported'] = pin_result.returncode == 0
         except:
@@ -278,10 +274,20 @@ def get_gpio_status():
         except:
             system_info['container'] = "Unknown"
         
+        # Check if gpiomem device exists and is accessible
+        try:
+            gpiomem_result = subprocess.run(['ls', '-la', '/dev/gpiomem'], capture_output=True, text=True, timeout=5)
+            if gpiomem_result.returncode == 0:
+                system_info['gpiomem_accessible'] = True
+                system_info['gpiomem_info'] = gpiomem_result.stdout.strip()
+            else:
+                system_info['gpiomem_accessible'] = False
+        except:
+            system_info['gpiomem_accessible'] = False
+        
         return {
             "timestamp": datetime.now().isoformat(),
             "gpio_info": gpio_info,
-            "gpiomem_usage": gpiomem_usage,
             "spi_devices": spi_devices,
             "sensor_config": sensor_config,
             "system_info": system_info,
