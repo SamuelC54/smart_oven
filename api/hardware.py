@@ -1,7 +1,33 @@
-import board
-import digitalio
-import adafruit_max31865
+# --- Hardware imports with error handling ---
+try:
+    import board
+    import busio
+    import digitalio
+    import adafruit_max31865
+    HARDWARE_AVAILABLE = True
+    CIRCUITPYTHON_AVAILABLE = True
+except ImportError as e:
+    HARDWARE_AVAILABLE = False
+    CIRCUITPYTHON_AVAILABLE = False
+except Exception as e:
+    HARDWARE_AVAILABLE = False
+    CIRCUITPYTHON_AVAILABLE = False
+
+# Import logger after hardware imports to avoid circular imports
 from logger import logger
+
+# Now log the hardware status
+if HARDWARE_AVAILABLE:
+    logger.info("CircuitPython libraries imported successfully")
+else:
+    logger.error("Failed to import CircuitPython libraries")
+
+if CIRCUITPYTHON_AVAILABLE:
+    logger.info("CircuitPython libraries available")
+else:
+    logger.info("CircuitPython libraries not available")
+
+# Import config after hardware imports
 from config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
 
 # --- Global sensor instance ---
@@ -16,7 +42,7 @@ class MAX31865Adafruit:
         self.wires = wires
         
         # Create sensor object, communicating over the board's default SPI bus
-        self.spi = board.SPI()
+        self.spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
         
         # Initialize CS pin based on configuration
         if CS_NAME == "CE0":
