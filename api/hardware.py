@@ -44,13 +44,13 @@ class MAX31865Adafruit:
         self.wires = wires
         
         # Create sensor object, communicating over the board's default SPI bus
-        self.spi = board.SPI()
+        self.spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
         
         # Initialize CS pin based on configuration
         if CS_NAME == "CE0":
-            self.cs = digitalio.DigitalInOut(board.D24)
+            self.cs = digitalio.DigitalInOut(board.D8)   # GPIO 8 (CE0)
         elif CS_NAME == "CE1":
-            self.cs = digitalio.DigitalInOut(board.D26)
+            self.cs = digitalio.DigitalInOut(board.D7)   # GPIO 7 (CE1)
         else:
             raise ValueError(f"Invalid CS name: {CS_NAME}")
         
