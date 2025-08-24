@@ -12,9 +12,9 @@ logger.info(f"Starting Smart Oven API with config: RTD={RTD_NOMINAL}, REF={REF_R
 
 # Include routers
 app.include_router(health.router, tags=["health"])
-app.include_router(temperature.router, tags=["temperature"])
-app.include_router(gpio.router, tags=["gpio"])
-app.include_router(debug.router, tags=["debug"])
+# app.include_router(temperature.router, tags=["temperature"])
+# app.include_router(gpio.router, tags=["gpio"])
+# app.include_router(debug.router, tags=["debug"])
 
 @app.on_event("startup")
 async def startup_event():
