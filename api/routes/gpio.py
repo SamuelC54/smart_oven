@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from ..hardware import set_gpio, HARDWARE_AVAILABLE, get_sensor
-from ..logger import logger
-from ..config import CS_NAME, RTD_NOMINAL, REF_RESISTOR, WIRES
+from hardware import set_gpio, HARDWARE_AVAILABLE, get_sensor
+from logger import logger
+from config import CS_NAME, RTD_NOMINAL, REF_RESISTOR, WIRES
 from datetime import datetime
 
 router = APIRouter()

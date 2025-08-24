@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from ..hardware import HARDWARE_AVAILABLE, get_sensor
-from ..logger import logger
+from hardware import HARDWARE_AVAILABLE, get_sensor
+from logger import logger
 
 router = APIRouter()
 

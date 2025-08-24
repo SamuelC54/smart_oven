@@ -1,9 +1,9 @@
 import asyncio
 from fastapi import FastAPI
-from .config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
-from .logger import logger
-from .hardware import HARDWARE_AVAILABLE
-from .routes import health, temperature, gpio, debug
+from config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
+from logger import logger
+from hardware import HARDWARE_AVAILABLE
+from routes import health, temperature, gpio, debug
 
 app = FastAPI(title="Pi Sensor/GPIO API (Docker)")
 

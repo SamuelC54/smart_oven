@@ -1,4 +1,4 @@
-from .config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
+from config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
 
 # --- Hardware imports with error handling ---
 try:
@@ -20,7 +20,7 @@ except Exception as e:
     CIRCUITPYTHON_AVAILABLE = False
 
 # Import logger after hardware imports to avoid circular imports
-from .logger import logger
+from logger import logger
 
 # Now log the hardware status
 if HARDWARE_AVAILABLE:

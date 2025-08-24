@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
-from ..hardware import HARDWARE_AVAILABLE
-from ..logger import logger, get_logs
+from hardware import HARDWARE_AVAILABLE
+from logger import logger, get_logs
 
 router = APIRouter()
 
