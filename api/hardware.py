@@ -44,33 +44,28 @@ class MAX31865Adafruit:
         # Create sensor object, communicating over the board's default SPI bus
         self.spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
         
-        # Initialize CS pin based on configuration
-        if CS_NAME == "CE0":
-            self.cs = digitalio.DigitalInOut(board.D8)   # GPIO 8 (CE0)
-        elif CS_NAME == "CE1":
-            self.cs = digitalio.DigitalInOut(board.D7)   # GPIO 7 (CE1)
-        else:
-            raise ValueError(f"Invalid CS name: {CS_NAME}")
+        # Initialize CS pin (using CE1/GPIO 16)
+        self.cs = digitalio.DigitalInOut(board.D16)  # GPIO 16 (CE1)
         
         # Initialize the MAX31865 sensor
         self.sensor = adafruit_max31865.MAX31865(
             self.spi, 
             self.cs, 
-            rtd_nominal=rtd_nominal, 
-            ref_resistor=ref_resistor, 
-            wires=wires
+            rtd_nominal=self.rtd_nominal, 
+            ref_resistor=self.ref_resistor, 
+            wires=self.wires
         )
         
-        logger.info(f"MAX31865 initialized with CS={CS_NAME}, wires={wires}")
-        logger.info(f"RTD nominal: {rtd_nominal}Ω, Ref resistor: {ref_resistor}Ω")
+        logger.info(f"MAX31865 initialized with CS=GPIO16, wires={self.wires}")
+        logger.info(f"RTD nominal: {self.rtd_nominal}Ω, Ref resistor: {self.ref_resistor}Ω")
         
         # Log configuration for debugging
-        if rtd_nominal == 100:
+        if self.rtd_nominal == 100:
             logger.info("Configured for PT100 sensor")
-        elif rtd_nominal == 1000:
+        elif self.rtd_nominal == 1000:
             logger.info("Configured for PT1000 sensor")
         else:
-            logger.warning(f"Unknown RTD nominal value: {rtd_nominal}Ω")
+            logger.warning(f"Unknown RTD nominal value: {self.rtd_nominal}Ω")
     
     def temperature(self):
         """Get temperature in Celsius"""
