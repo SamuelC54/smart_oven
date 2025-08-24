@@ -35,19 +35,142 @@ logger.info(f"Starting Smart Oven API with config: RTD={RTD_NOMINAL}, REF={REF_R
 
 # --- Hardware imports with error handling ---
 try:
-    import board, busio, digitalio
-    import adafruit_max31865
-    logger.info("Hardware libraries imported successfully")
+    import spidev
+    logger.info("spidev library imported successfully")
     HARDWARE_AVAILABLE = True
 except ImportError as e:
-    logger.error(f"Failed to import hardware libraries: {e}")
+    logger.error(f"Failed to import spidev: {e}")
     HARDWARE_AVAILABLE = False
 except Exception as e:
-    logger.error(f"Unexpected error importing hardware libraries: {e}")
+    logger.error(f"Unexpected error importing spidev: {e}")
     HARDWARE_AVAILABLE = False
+
+# Try CircuitPython as fallback
+try:
+    import board, busio, digitalio
+    import adafruit_max31865
+    logger.info("CircuitPython libraries also available")
+    CIRCUITPYTHON_AVAILABLE = True
+except ImportError as e:
+    logger.info(f"CircuitPython libraries not available: {e}")
+    CIRCUITPYTHON_AVAILABLE = False
+except Exception as e:
+    logger.info(f"Unexpected error importing CircuitPython libraries: {e}")
+    CIRCUITPYTHON_AVAILABLE = False
 
 # --- Global sensor instance ---
 _sensor = None
+
+class MAX31865Direct:
+    """Direct MAX31865 implementation using spidev"""
+    
+    def __init__(self, bus=0, device=1, rtd_nominal=100, ref_resistor=430, wires=3):
+        self.spi = spidev.SpiDev()
+        self.spi.open(bus, device)
+        self.spi.max_speed_hz = 5000000  # 5MHz
+        self.spi.mode = 1  # CPOL=0, CPHA=1
+        self.rtd_nominal = rtd_nominal
+        self.ref_resistor = ref_resistor
+        self.wires = wires
+        
+        # Initialize the sensor
+        self._init_sensor()
+    
+    def _init_sensor(self):
+        """Initialize MAX31865 configuration"""
+        # Read current configuration
+        config = self._read_register(0x00)
+        
+        # Set 3-wire mode if needed
+        if self.wires == 3:
+            config |= 0x10  # Set 3-wire bit
+        else:
+            config &= ~0x10  # Clear 3-wire bit
+        
+        # Set bias voltage on
+        config |= 0x80
+        
+        # Write configuration
+        self._write_register(0x00, config)
+        
+        # Wait for bias voltage to stabilize
+        import time
+        time.sleep(0.1)
+    
+    def _read_register(self, reg):
+        """Read a register from MAX31865"""
+        # MAX31865 uses 7-bit register addresses with read bit
+        cmd = [reg & 0x7F, 0x00]
+        response = self.spi.xfer(cmd)
+        return response[1]
+    
+    def _write_register(self, reg, value):
+        """Write a register to MAX31865"""
+        # MAX31865 uses 7-bit register addresses with write bit
+        cmd = [reg | 0x80, value]
+        self.spi.xfer(cmd)
+    
+    def _read_rtd(self):
+        """Read RTD resistance value"""
+        # Set bias voltage on and start conversion
+        config = self._read_register(0x00)
+        config |= 0x80  # Bias voltage on
+        config |= 0x20  # Start conversion
+        self._write_register(0x00, config)
+        
+        # Wait for conversion (max 100ms)
+        import time
+        for _ in range(100):
+            config = self._read_register(0x00)
+            if not (config & 0x20):  # Conversion complete
+                break
+            time.sleep(0.001)
+        
+        # Read RTD value (24-bit)
+        rtd_bytes = []
+        for i in range(3):
+            rtd_bytes.append(self._read_register(0x01 + i))
+        
+        # Combine bytes (MSB first)
+        rtd_raw = (rtd_bytes[0] << 16) | (rtd_bytes[1] << 8) | rtd_bytes[2]
+        
+        # Check for faults
+        if rtd_raw & 0x01:  # Fault bit
+            fault = self._read_register(0x07)
+            raise Exception(f"MAX31865 fault: 0x{fault:02X}")
+        
+        # Remove fault bit and convert to resistance
+        rtd_raw >>= 1
+        rtd_resistance = rtd_raw * self.ref_resistor / 32768.0
+        
+        return rtd_resistance
+    
+    def temperature(self):
+        """Get temperature in Celsius"""
+        rtd_resistance = self._read_rtd()
+        
+        # Convert RTD resistance to temperature using Callendar-Van Dusen equation
+        # Simplified for PT100 (0°C to 850°C)
+        A = 3.9083e-3
+        B = -5.775e-7
+        
+        # Solve quadratic equation: R = R0 * (1 + A*T + B*T^2)
+        # T = (-R0*A + sqrt((R0*A)^2 - 4*R0*B*(R0-R))) / (2*R0*B)
+        R0 = self.rtd_nominal
+        R = rtd_resistance
+        
+        discriminant = (R0 * A) ** 2 - 4 * R0 * B * (R0 - R)
+        if discriminant < 0:
+            raise Exception("Invalid RTD resistance")
+        
+        temperature = (-R0 * A + (discriminant ** 0.5)) / (2 * R0 * B)
+        
+        return temperature
+    
+    def close(self):
+        """Close SPI connection"""
+        if self.spi:
+            self.spi.close()
 
 def get_sensor():
     global _sensor
@@ -57,17 +180,23 @@ def get_sensor():
     if _sensor is None:
         logger.info("Initializing SPI and sensor...")
         try:
-            # Map CS name to actual pin
+            # Map CS name to device number
             if CS_NAME == "CE0":
-                cs = digitalio.DigitalInOut(board.CE0)
+                device = 0
             elif CS_NAME == "CE1":
-                cs = digitalio.DigitalInOut(board.CE1)
+                device = 1
             else:
                 raise ValueError(f"Invalid CS name: {CS_NAME}")
             
-            spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
-            _sensor = adafruit_max31865.MAX31865(spi, cs, rtd_nominal=RTD_NOMINAL, ref_resistor=REF_RESISTOR, wires=WIRES)
-            logger.info("Sensor initialized successfully")
+            # Use direct spidev implementation
+            _sensor = MAX31865Direct(
+                bus=0, 
+                device=device, 
+                rtd_nominal=RTD_NOMINAL, 
+                ref_resistor=REF_RESISTOR, 
+                wires=WIRES
+            )
+            logger.info("Sensor initialized successfully using spidev")
         except Exception as e:
             logger.error(f"Failed to initialize sensor: {e}")
             raise
@@ -217,85 +346,6 @@ def test_gpio_access():
             "ref_resistor": REF_RESISTOR
         }
     }
-
-@app.get("/spi-status")
-def get_spi_status():
-    """Check SPI status and provide troubleshooting info"""
-    logger.info("SPI status requested")
-    
-    spi_info = {}
-    
-    try:
-        # Check if SPI devices exist
-        spi_result = subprocess.run(['ls', '/dev/spidev*'], capture_output=True, text=True, timeout=10)
-        if spi_result.returncode == 0:
-            spi_info['devices'] = spi_result.stdout.strip().split('\n')
-        else:
-            spi_info['devices'] = []
-        
-        # Check SPI kernel modules
-        try:
-            modules_result = subprocess.run(['lsmod'], capture_output=True, text=True, timeout=10)
-            if modules_result.returncode == 0:
-                spi_modules = []
-                for line in modules_result.stdout.split('\n'):
-                    if 'spi' in line.lower():
-                        spi_modules.append(line.strip())
-                spi_info['kernel_modules'] = spi_modules
-            else:
-                spi_info['kernel_modules'] = ["Failed to check kernel modules"]
-        except:
-            spi_info['kernel_modules'] = ["Failed to check kernel modules"]
-        
-        # Check if we're on a Raspberry Pi
-        try:
-            model_result = subprocess.run(['cat', '/proc/device-tree/model'], capture_output=True, text=True, timeout=5)
-            if model_result.returncode == 0:
-                spi_info['device_model'] = model_result.stdout.strip()
-            else:
-                spi_info['device_model'] = "Unknown"
-        except:
-            spi_info['device_model'] = "Unknown"
-        
-        # Check if SPI is enabled in config
-        try:
-            config_result = subprocess.run(['cat', '/boot/config.txt'], capture_output=True, text=True, timeout=10)
-            if config_result.returncode == 0:
-                spi_enabled = 'dtparam=spi=on' in config_result.stdout
-                spi_info['spi_enabled_in_config'] = spi_enabled
-                if not spi_enabled:
-                    spi_info['config_help'] = "SPI not enabled. Add 'dtparam=spi=on' to /boot/config.txt and reboot"
-            else:
-                spi_info['spi_enabled_in_config'] = "Could not check config.txt"
-        except:
-            spi_info['spi_enabled_in_config'] = "Could not check config.txt"
-        
-        # Check device tree overlays
-        try:
-            if 'spi_enabled_in_config' in spi_info and spi_info['spi_enabled_in_config'] == True:
-                overlay_result = subprocess.run(['vcgencmd', 'get_config', 'str', 'dtoverlay'], capture_output=True, text=True, timeout=10)
-                if overlay_result.returncode == 0:
-                    spi_info['dtoverlay'] = overlay_result.stdout.strip()
-                else:
-                    spi_info['dtoverlay'] = "No overlays or could not check"
-            else:
-                spi_info['dtoverlay'] = "SPI not enabled in config"
-        except:
-            spi_info['dtoverlay'] = "Could not check overlays"
-        
-        return {
-            "timestamp": datetime.now().isoformat(),
-            "spi_info": spi_info,
-            "troubleshooting": {
-                "spi_devices_missing": len(spi_info.get('devices', [])) == 0,
-                "needs_reboot": len(spi_info.get('devices', [])) == 0 and spi_info.get('spi_enabled_in_config') == True,
-                "needs_config": spi_info.get('spi_enabled_in_config') == False
-            }
-        }
-        
-    except Exception as e:
-        logger.error(f"Failed to get SPI status: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get SPI status: {e}")
 
 @app.get("/spi-test")
 def test_spi_direct():
@@ -464,7 +514,7 @@ def get_temp():
     logger.info("Temperature reading requested")
     try:
         sensor = get_sensor()
-        temp = sensor.temperature
+        temp = sensor.temperature()
         logger.info(f"Temperature: {temp}°C")
         return {"temperature": temp, "unit": "celsius"}
     except Exception as e:
