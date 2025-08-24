@@ -141,6 +141,12 @@ jobs:
         run: |
           sleep 10
 
+      - name: Show API logs
+        run: |
+          echo "=== API Container Logs ==="
+          docker compose logs --tail=50 api || echo "Could not retrieve logs"
+          echo "=== End API Container Logs ==="
+
       - name: Smoke test
         run: |
           curl -sSf http://127.0.0.1:8081/health
