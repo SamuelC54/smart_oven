@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
@@ -15,6 +15,7 @@ import {
   Timer,
   Wind,
   X,
+  Droplets,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 

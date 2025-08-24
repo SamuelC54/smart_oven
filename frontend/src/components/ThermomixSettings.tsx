@@ -24,7 +24,7 @@ import {
 
 interface ThermomixSettingsProps {
   onBack: () => void;
-  onSave: (settings: any) => void;
+  onSave: (settings: Record<string, unknown>) => void;
 }
 
 export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
@@ -42,7 +42,7 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
     nightMode: false,
   });
 
-  const handleSettingChange = (key: string, value: any) => {
+  const handleSettingChange = (key: string, value: unknown) => {
     setSettings((prev) => ({
       ...prev,
       [key]: value,

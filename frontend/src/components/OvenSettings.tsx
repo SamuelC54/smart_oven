@@ -29,7 +29,7 @@ import {
 
 interface OvenSettingsProps {
   onBack: () => void;
-  onSave: (settings: any) => void;
+  onSave: (settings: Record<string, unknown>) => void;
 }
 
 export function OvenSettings({ onBack, onSave }: OvenSettingsProps) {
@@ -63,7 +63,7 @@ export function OvenSettings({ onBack, onSave }: OvenSettingsProps) {
     nightMode: false,
   });
 
-  const handleSettingChange = (key: string, value: any) => {
+  const handleSettingChange = (key: string, value: unknown) => {
     setSettings((prev) => ({
       ...prev,
       [key]: value,

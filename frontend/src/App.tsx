@@ -278,7 +278,7 @@ export default function App() {
     handleSelectRecipe(recipe);
   };
 
-  const handleSaveSettings = (_settings: unknown) => {
+  const handleSaveSettings = () => {
     setCurrentView("dashboard");
     toast.success("⚙️ Settings saved successfully!");
   };
