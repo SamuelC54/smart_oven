@@ -43,9 +43,9 @@ class MAX31865Adafruit:
         
         # Initialize CS pin based on configuration
         if CS_NAME == "CE0":
-            self.cs = digitalio.DigitalInOut(board.CE0)
+            self.cs = digitalio.DigitalInOut(board.D24)
         elif CS_NAME == "CE1":
-            self.cs = digitalio.DigitalInOut(board.CE1)
+            self.cs = digitalio.DigitalInOut(board.D26)
         else:
             raise ValueError(f"Invalid CS name: {CS_NAME}")
         
