@@ -11,5 +11,3 @@ services:
       SENSOR_REF_RESISTOR: "430" # adjust to your breakout's value
       SENSOR_WIRES: "3" # 2, 3, or 4
       SENSOR_CS: "CE1" # or CE1 (maps to /dev/spidev0.1)
-    devices:
-      - /dev/gpiomem

@@ -1,39 +1,11 @@
-from config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
-
-# --- Hardware imports with error handling ---
-try:
-    import board
-    import busio
-    import digitalio
-    import adafruit_max31865
-    HARDWARE_AVAILABLE = True
-    CIRCUITPYTHON_AVAILABLE = True
-except ImportError as e:
-    HARDWARE_AVAILABLE = False
-    CIRCUITPYTHON_AVAILABLE = False
-except Exception as e:
-    HARDWARE_AVAILABLE = False
-    CIRCUITPYTHON_AVAILABLE = False
-
-# Import logger after hardware imports to avoid circular imports
+import board
+import digitalio
+import adafruit_max31865
 from logger import logger
-
-# Now log the hardware status
-if HARDWARE_AVAILABLE:
-    logger.info("spidev library imported successfully")
-else:
-    logger.error("Failed to import spidev")
-
-if CIRCUITPYTHON_AVAILABLE:
-    logger.info("CircuitPython libraries also available")
-else:
-    logger.info("CircuitPython libraries not available")
-
-
+from config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
 
 # --- Global sensor instance ---
 _sensor = None
-
 class MAX31865Adafruit:
     """MAX31865 implementation using Adafruit CircuitPython library"""
     
