@@ -1,30 +1,39 @@
-from .logger import logger
 from .config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
 
 # --- Hardware imports with error handling ---
 try:
     import spidev
-    logger.info("spidev library imported successfully")
     HARDWARE_AVAILABLE = True
 except ImportError as e:
-    logger.error(f"Failed to import spidev: {e}")
     HARDWARE_AVAILABLE = False
 except Exception as e:
-    logger.error(f"Unexpected error importing spidev: {e}")
     HARDWARE_AVAILABLE = False
 
 # Try CircuitPython as fallback
 try:
     import board, busio, digitalio
     import adafruit_max31865
-    logger.info("CircuitPython libraries also available")
     CIRCUITPYTHON_AVAILABLE = True
 except ImportError as e:
-    logger.info(f"CircuitPython libraries not available: {e}")
     CIRCUITPYTHON_AVAILABLE = False
 except Exception as e:
-    logger.info(f"Unexpected error importing CircuitPython libraries: {e}")
     CIRCUITPYTHON_AVAILABLE = False
+
+# Import logger after hardware imports to avoid circular imports
+from .logger import logger
+
+# Now log the hardware status
+if HARDWARE_AVAILABLE:
+    logger.info("spidev library imported successfully")
+else:
+    logger.error("Failed to import spidev")
+
+if CIRCUITPYTHON_AVAILABLE:
+    logger.info("CircuitPython libraries also available")
+else:
+    logger.info("CircuitPython libraries not available")
+
+
 
 # --- Global sensor instance ---
 _sensor = None

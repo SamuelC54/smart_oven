@@ -13,8 +13,14 @@ def root():
 @router.get("/health")
 def health():
     logger.info("Health check requested")
+    try:
+        sensor = get_sensor()
+        sensor_initialized = sensor is not None
+    except:
+        sensor_initialized = False
+    
     return {
         "status": "ok",
         "hardware_available": HARDWARE_AVAILABLE,
-        "sensor_initialized": get_sensor() is not None
+        "sensor_initialized": sensor_initialized
     }
