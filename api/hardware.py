@@ -44,7 +44,7 @@ class MAX31865Adafruit:
         self.wires = wires
         
         # Create sensor object, communicating over the board's default SPI bus
-        self.spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
+        self.spi = board.SPI()
         
         # Initialize CS pin based on configuration
         if CS_NAME == "CE0":
