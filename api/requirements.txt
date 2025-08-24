@@ -3,3 +3,4 @@ uvicorn[standard]
 adafruit-blinka
 adafruit-circuitpython-max31865
 rpi-lgpio
+spidev
