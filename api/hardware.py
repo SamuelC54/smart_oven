@@ -44,8 +44,8 @@ class MAX31865Adafruit:
         # Create sensor object, communicating over the board's default SPI bus
         self.spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
         
-        # Initialize CS pin (using CE1/GPIO 16)
-        self.cs = digitalio.DigitalInOut(board.D16)  # GPIO 16 (CE1)
+        # Initialize CS pin
+        self.cs = digitalio.DigitalInOut(board.D16)  # GPIO 16
         
         # Initialize the MAX31865 sensor
         self.sensor = adafruit_max31865.MAX31865(
