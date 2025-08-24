@@ -1,3 +1,5 @@
 fastapi
 uvicorn[standard]
 adafruit-circuitpython-max31865
+adafruit-blinka
+lgpio
