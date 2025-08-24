@@ -134,9 +134,9 @@ class MAX31865Direct:
         # Combine bytes (MSB first)
         rtd_raw = (rtd_bytes[0] << 16) | (rtd_bytes[1] << 8) | rtd_bytes[2]
         
-        # Check for faults
-        if rtd_raw & 0x01:  # Fault bit
-            fault = self._read_register(0x07)
+        # Check for faults in fault register
+        fault = self._read_register(0x07)
+        if fault != 0x00:  # Any fault bits set
             raise Exception(f"MAX31865 fault: 0x{fault:02X}")
         
         # Remove fault bit and convert to resistance
@@ -148,6 +148,9 @@ class MAX31865Direct:
     def temperature(self):
         """Get temperature in Celsius"""
         rtd_resistance = self._read_rtd()
+        
+        # Log raw values for debugging
+        logger.info(f"RTD resistance: {rtd_resistance:.2f} Ω")
         
         # Convert RTD resistance to temperature using Callendar-Van Dusen equation
         # Simplified for PT100 (0°C to 850°C)
@@ -161,10 +164,12 @@ class MAX31865Direct:
         
         discriminant = (R0 * A) ** 2 - 4 * R0 * B * (R0 - R)
         if discriminant < 0:
-            raise Exception("Invalid RTD resistance")
+            logger.error(f"Invalid RTD resistance: {R} Ω (nominal: {R0} Ω)")
+            raise Exception(f"Invalid RTD resistance: {R} Ω")
         
         temperature = (-R0 * A + (discriminant ** 0.5)) / (2 * R0 * B)
         
+        logger.info(f"Calculated temperature: {temperature:.2f}°C")
         return temperature
     
     def close(self):
@@ -519,6 +524,57 @@ def get_temp():
         return {"temperature": temp, "unit": "celsius"}
     except Exception as e:
         logger.error(f"Failed to read temperature: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/sensor-debug")
+def debug_sensor():
+    """Debug endpoint to see raw sensor data"""
+    logger.info("Sensor debug requested")
+    try:
+        sensor = get_sensor()
+        
+        # Read raw registers
+        config = sensor._read_register(0x00)
+        rtd_msb = sensor._read_register(0x01)
+        rtd_lsb = sensor._read_register(0x02)
+        rtd_mid = sensor._read_register(0x03)
+        fault = sensor._read_register(0x07)
+        
+        # Calculate raw RTD value
+        rtd_raw = (rtd_msb << 16) | (rtd_mid << 8) | rtd_lsb
+        rtd_raw_shifted = rtd_raw >> 1  # Remove fault bit
+        
+        # Calculate resistance
+        rtd_resistance = rtd_raw_shifted * sensor.ref_resistor / 32768.0
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "registers": {
+                "config": f"0x{config:02X}",
+                "rtd_msb": f"0x{rtd_msb:02X}",
+                "rtd_mid": f"0x{rtd_mid:02X}", 
+                "rtd_lsb": f"0x{rtd_lsb:02X}",
+                "fault": f"0x{fault:02X}"
+            },
+            "raw_values": {
+                "rtd_raw": rtd_raw,
+                "rtd_raw_shifted": rtd_raw_shifted,
+                "rtd_resistance_ohms": rtd_resistance,
+                "ref_resistor": sensor.ref_resistor,
+                "rtd_nominal": sensor.rtd_nominal,
+                "wires": sensor.wires
+            },
+            "config_bits": {
+                "bias_voltage": bool(config & 0x80),
+                "conversion": bool(config & 0x20),
+                "3_wire": bool(config & 0x10),
+                "fault_cycle": bool(config & 0x08),
+                "fault_status": bool(config & 0x04),
+                "filter_50hz": bool(config & 0x01)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to debug sensor: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 class GPIORequest(BaseModel):
