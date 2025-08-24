@@ -142,6 +142,7 @@ jobs:
           sleep 10
 
       - name: Show API logs
+        working-directory: ./api
         run: |
           echo "=== API Container Logs ==="
           docker compose logs --tail=50 api || echo "Could not retrieve logs"
