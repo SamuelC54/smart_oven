@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { EnhancedThermomixDashboard } from "./components/EnhancedThermomixDashboard";
 import { ThermomixRecipeSelector } from "./components/ThermomixRecipeSelector";
 import { RecipeDetails } from "./components/RecipeDetails";
@@ -177,8 +177,8 @@ export default function App() {
         const totalSeconds = hours * 3600 + minutes * 60 + seconds;
 
         // Calculate expected time for this phase
-        const expectedPhaseTime = currentRecipePhase.duration * 60;
-        const totalRecipeTime = selectedRecipe.totalTime * 60;
+        // const expectedPhaseTime = currentRecipePhase.duration * 60;
+        // const totalRecipeTime = selectedRecipe.totalTime * 60;
         const remainingPhases = selectedRecipe.phases.slice(currentPhase + 1);
         const remainingPhaseTime =
           remainingPhases.reduce((acc, phase) => acc + phase.duration, 0) * 60;
@@ -278,7 +278,7 @@ export default function App() {
     handleSelectRecipe(recipe);
   };
 
-  const handleSaveSettings = (settings: any) => {
+  const handleSaveSettings = (_settings: unknown) => {
     setCurrentView("dashboard");
     toast.success("⚙️ Settings saved successfully!");
   };

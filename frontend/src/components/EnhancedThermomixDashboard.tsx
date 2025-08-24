@@ -1,32 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Slider } from "./ui/slider";
-import { Switch } from "./ui/switch";
-import { 
-  Play, 
-  Pause, 
+import {
+  Play,
+  Pause,
   RotateCcw,
-  Plus,
-  Minus,
   Thermometer,
-  Clock,
-  Droplets,
   ChefHat,
   Settings,
   BookOpen,
   CheckCircle,
-  AlertCircle,
-  Edit,
   Timer,
-  Zap,
   Wind,
-  X
+  X,
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 
-type CookingMode = 'timer' | 'probe' | null;
+type CookingMode = "timer" | "probe" | null;
 
 interface EnhancedThermomixDashboardProps {
   currentTemp: number;
@@ -56,7 +48,12 @@ interface EnhancedThermomixDashboardProps {
   onFanSpeedChange: (value: number) => void;
   onProbeTargetChange: (value: number) => void;
   onCustomTimerChange: (hours: number, minutes: number) => void;
-  tempHistory: Array<{time: string, ovenTemp: number, humidity: number, foodTemp: number}>;
+  tempHistory: Array<{
+    time: string;
+    ovenTemp: number;
+    humidity: number;
+    foodTemp: number;
+  }>;
 }
 
 export function EnhancedThermomixDashboard({
@@ -78,7 +75,6 @@ export function EnhancedThermomixDashboard({
   onOpenSettings,
   onOpenRecipes,
   onTempAdjust,
-  onTimeAdjust,
   onAddTimer,
   onAddProbe,
   onRemoveTimer,
@@ -87,17 +83,20 @@ export function EnhancedThermomixDashboard({
   onFanSpeedChange,
   onProbeTargetChange,
   onCustomTimerChange,
-  tempHistory
+  tempHistory,
 }: EnhancedThermomixDashboardProps) {
   const tempProgress = Math.min((currentTemp / targetTemp) * 100, 100);
   const isHeating = currentTemp < targetTemp && isRunning;
-  const phaseProgress = totalPhases > 0 ? ((currentPhase + 1) / totalPhases) * 100 : 0;
-  const humidityProgress = Math.min((humidity / targetHumidity) * 100, 100);
-  const probeProgress = cookingMode === 'probe' ? Math.min((ingredientTemp / probeTargetTemp) * 100, 100) : 0;
+  const phaseProgress =
+    totalPhases > 0 ? ((currentPhase + 1) / totalPhases) * 100 : 0;
+  // const humidityProgress = Math.min((humidity / targetHumidity) * 100, 100);
+  const probeProgress =
+    cookingMode === "probe"
+      ? Math.min((ingredientTemp / probeTargetTemp) * 100, 100)
+      : 0;
 
   return (
     <div className="h-full flex flex-col p-3 bg-gradient-to-br from-gray-50 to-gray-100">
-      
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -106,7 +105,7 @@ export function EnhancedThermomixDashboard({
           </div>
           <h1 className="text-lg font-medium text-gray-800">Smart Oven</h1>
         </div>
-        
+
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -137,48 +136,51 @@ export function EnhancedThermomixDashboard({
                 Phase {currentPhase + 1}/{totalPhases}: {phaseName}
               </h3>
             </div>
-            <div className="text-sm font-medium text-blue-600">{phaseProgress.toFixed(0)}%</div>
+            <div className="text-sm font-medium text-blue-600">
+              {phaseProgress.toFixed(0)}%
+            </div>
           </div>
           <Progress value={phaseProgress} className="h-2 bg-blue-100" />
         </Card>
       )}
 
       <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
-        
         {/* Comprehensive Graph (when running) */}
         {isRunning && (
           <Card className="p-3 rounded-2xl border-2 shadow-md">
-            <h3 className="text-sm font-medium text-gray-700 mb-2 text-center">Cooking Progress</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-2 text-center">
+              Cooking Progress
+            </h3>
             <div className="h-32">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={tempHistory}>
-                  <XAxis 
-                    dataKey="time" 
+                  <XAxis
+                    dataKey="time"
                     tick={{ fontSize: 10 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis hide />
-                  <Line 
-                    type="monotone" 
-                    dataKey="ovenTemp" 
-                    stroke="#f97316" 
+                  <Line
+                    type="monotone"
+                    dataKey="ovenTemp"
+                    stroke="#f97316"
                     strokeWidth={2}
                     dot={false}
                     name="Oven Temp"
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="foodTemp" 
-                    stroke="#10b981" 
+                  <Line
+                    type="monotone"
+                    dataKey="foodTemp"
+                    stroke="#10b981"
                     strokeWidth={2}
                     dot={false}
                     name="Food Temp"
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="humidity" 
-                    stroke="#06b6d4" 
+                  <Line
+                    type="monotone"
+                    dataKey="humidity"
+                    stroke="#06b6d4"
                     strokeWidth={2}
                     dot={false}
                     name="Humidity"
@@ -202,16 +204,18 @@ export function EnhancedThermomixDashboard({
             </div>
           </Card>
         )}
-        
+
         {/* Central Circular Display */}
         <div className="flex justify-center">
           <div className="relative">
             {/* Main Circle */}
             <div className="w-40 h-40 rounded-full bg-white border-4 border-gray-200 shadow-xl flex items-center justify-center relative overflow-hidden">
-              
               {/* Progress Ring */}
               <div className="absolute inset-2">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <svg
+                  className="w-full h-full transform -rotate-90"
+                  viewBox="0 0 100 100"
+                >
                   <circle
                     cx="50"
                     cy="50"
@@ -229,11 +233,24 @@ export function EnhancedThermomixDashboard({
                     strokeWidth="3"
                     fill="none"
                     strokeDasharray={`${2 * Math.PI * 45}`}
-                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - (cookingMode === 'probe' ? probeProgress : tempProgress) / 100)}`}
+                    strokeDashoffset={`${
+                      2 *
+                      Math.PI *
+                      45 *
+                      (1 -
+                        (cookingMode === "probe"
+                          ? probeProgress
+                          : tempProgress) /
+                          100)
+                    }`}
                     className={`transition-all duration-1000 ${
-                      cookingMode === 'probe' 
-                        ? (ingredientTemp >= probeTargetTemp ? 'text-green-500' : 'text-orange-500')
-                        : (isHeating ? 'text-orange-500' : 'text-green-500')
+                      cookingMode === "probe"
+                        ? ingredientTemp >= probeTargetTemp
+                          ? "text-green-500"
+                          : "text-orange-500"
+                        : isHeating
+                        ? "text-orange-500"
+                        : "text-green-500"
                     }`}
                   />
                 </svg>
@@ -241,13 +258,15 @@ export function EnhancedThermomixDashboard({
 
               {/* Center Content */}
               <div className="text-center z-10">
-                {cookingMode === 'probe' ? (
+                {cookingMode === "probe" ? (
                   <>
                     <div className="text-3xl font-bold text-gray-800 mb-1">
                       {ingredientTemp}°
                     </div>
                     <div className="text-xs text-gray-500 mb-1">Food Temp</div>
-                    <div className="text-xs text-gray-400 mb-1">Target: {probeTargetTemp}°</div>
+                    <div className="text-xs text-gray-400 mb-1">
+                      Target: {probeTargetTemp}°
+                    </div>
                   </>
                 ) : (
                   <>
@@ -255,24 +274,33 @@ export function EnhancedThermomixDashboard({
                       {currentTemp}°
                     </div>
                     <div className="text-xs text-gray-500 mb-1">Current</div>
-                    <div className="text-xs text-gray-400 mb-1">Target: {targetTemp}°</div>
+                    <div className="text-xs text-gray-400 mb-1">
+                      Target: {targetTemp}°
+                    </div>
                   </>
                 )}
-                <div className={`text-xs px-2 py-1 rounded-full ${
-                  cookingMode === 'probe'
-                    ? (ingredientTemp >= probeTargetTemp 
-                       ? 'bg-green-100 text-green-600' 
-                       : 'bg-orange-100 text-orange-600')
-                    : (isHeating 
-                       ? 'bg-orange-100 text-orange-600' 
-                       : currentTemp >= targetTemp 
-                       ? 'bg-green-100 text-green-600'
-                       : 'bg-gray-100 text-gray-600')
-                }`}>
-                  {cookingMode === 'probe' 
-                    ? (ingredientTemp >= probeTargetTemp ? 'Ready' : 'Cooking')
-                    : (isHeating ? 'Heating...' : currentTemp >= targetTemp ? 'Ready' : 'Standby')
-                  }
+                <div
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    cookingMode === "probe"
+                      ? ingredientTemp >= probeTargetTemp
+                        ? "bg-green-100 text-green-600"
+                        : "bg-orange-100 text-orange-600"
+                      : isHeating
+                      ? "bg-orange-100 text-orange-600"
+                      : currentTemp >= targetTemp
+                      ? "bg-green-100 text-green-600"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {cookingMode === "probe"
+                    ? ingredientTemp >= probeTargetTemp
+                      ? "Ready"
+                      : "Cooking"
+                    : isHeating
+                    ? "Heating..."
+                    : currentTemp >= targetTemp
+                    ? "Ready"
+                    : "Standby"}
                 </div>
               </div>
 
@@ -288,9 +316,9 @@ export function EnhancedThermomixDashboard({
                 size="lg"
                 onClick={onToggleRunning}
                 className={`w-14 h-14 rounded-full shadow-lg border-2 border-white text-white transition-all duration-300 ${
-                  isRunning 
-                    ? 'bg-red-500 hover:bg-red-600 scale-105' 
-                    : 'bg-green-500 hover:bg-green-600'
+                  isRunning
+                    ? "bg-red-500 hover:bg-red-600 scale-105"
+                    : "bg-green-500 hover:bg-green-600"
                 }`}
               >
                 {isRunning ? (
@@ -305,8 +333,10 @@ export function EnhancedThermomixDashboard({
 
         {/* Cooking Mode Selection */}
         <Card className="p-3 rounded-2xl border-2 shadow-md">
-          <h3 className="text-sm font-medium text-gray-800 mb-2">Cooking Mode</h3>
-          
+          <h3 className="text-sm font-medium text-gray-800 mb-2">
+            Cooking Mode
+          </h3>
+
           {cookingMode === null && (
             <div className="grid grid-cols-2 gap-2">
               <Button
@@ -319,7 +349,7 @@ export function EnhancedThermomixDashboard({
               </Button>
               <Button
                 onClick={onAddProbe}
-                className="h-10 rounded-xl gap-2 text-xs"  
+                className="h-10 rounded-xl gap-2 text-xs"
                 variant="outline"
               >
                 <Thermometer className="w-3 h-3" />
@@ -328,7 +358,7 @@ export function EnhancedThermomixDashboard({
             </div>
           )}
 
-          {cookingMode === 'timer' && (
+          {cookingMode === "timer" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Timer Mode</span>
@@ -347,35 +377,47 @@ export function EnhancedThermomixDashboard({
               {!isRunning && (
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs font-medium text-gray-700">Hours</label>
+                    <label className="text-xs font-medium text-gray-700">
+                      Hours
+                    </label>
                     <Slider
                       value={[customTimer.hours]}
-                      onValueChange={([value]) => onCustomTimerChange(value, customTimer.minutes)}
+                      onValueChange={([value]) =>
+                        onCustomTimerChange(value, customTimer.minutes)
+                      }
                       min={0}
                       max={12}
                       step={1}
                       className="h-1"
                     />
-                    <div className="text-center text-xs text-gray-500">{customTimer.hours}h</div>
+                    <div className="text-center text-xs text-gray-500">
+                      {customTimer.hours}h
+                    </div>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-700">Minutes</label>
+                    <label className="text-xs font-medium text-gray-700">
+                      Minutes
+                    </label>
                     <Slider
                       value={[customTimer.minutes]}
-                      onValueChange={([value]) => onCustomTimerChange(customTimer.hours, value)}
+                      onValueChange={([value]) =>
+                        onCustomTimerChange(customTimer.hours, value)
+                      }
                       min={0}
                       max={59}
                       step={5}
                       className="h-1"
                     />
-                    <div className="text-center text-xs text-gray-500">{customTimer.minutes}m</div>
+                    <div className="text-center text-xs text-gray-500">
+                      {customTimer.minutes}m
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {cookingMode === 'probe' && (
+          {cookingMode === "probe" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Probe Mode</span>
@@ -393,7 +435,9 @@ export function EnhancedThermomixDashboard({
               </div>
               {!isRunning && (
                 <div>
-                  <label className="text-xs font-medium text-gray-700">Target Temperature</label>
+                  <label className="text-xs font-medium text-gray-700">
+                    Target Temperature
+                  </label>
                   <Slider
                     value={[probeTargetTemp]}
                     onValueChange={([value]) => onProbeTargetChange(value)}
@@ -418,11 +462,15 @@ export function EnhancedThermomixDashboard({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Thermometer className="w-4 h-4 text-orange-500" />
-              <span className="text-sm font-medium text-gray-700">Oven Temperature</span>
+              <span className="text-sm font-medium text-gray-700">
+                Oven Temperature
+              </span>
             </div>
-            <span className="text-lg font-bold text-gray-800">{targetTemp}°C</span>
+            <span className="text-lg font-bold text-gray-800">
+              {targetTemp}°C
+            </span>
           </div>
-          
+
           {!isRunning && (
             <div>
               <Slider
@@ -446,14 +494,16 @@ export function EnhancedThermomixDashboard({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Droplets className="w-4 h-4 text-cyan-500" />
-              <span className="text-sm font-medium text-gray-700">Humidity</span>
+              <span className="text-sm font-medium text-gray-700">
+                Humidity
+              </span>
             </div>
             <div className="text-sm">
               <span className="font-bold text-cyan-600">{humidity}%</span>
               <span className="text-gray-500"> / {targetHumidity}%</span>
             </div>
           </div>
-          
+
           {!isRunning && (
             <div>
               <Slider
@@ -477,11 +527,13 @@ export function EnhancedThermomixDashboard({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Wind className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-gray-700">Fan Speed</span>
+              <span className="text-sm font-medium text-gray-700">
+                Fan Speed
+              </span>
             </div>
             <span className="text-lg font-bold text-blue-600">{fanSpeed}%</span>
           </div>
-          
+
           {!isRunning && (
             <div>
               <Slider

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Search, Clock, Users, Star, ChefHat } from "lucide-react";
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface Recipe {
   id: string;
@@ -13,7 +13,7 @@ interface Recipe {
   category: string;
   cookTime: number;
   servings: number;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  difficulty: "Easy" | "Medium" | "Hard";
   rating: number;
   temperature: number;
   image: string;
@@ -28,118 +28,128 @@ interface RecipeSelectorProps {
 
 const sampleRecipes: Recipe[] = [
   {
-    id: '1',
-    name: 'Classic Roast Chicken',
-    category: 'poultry',
+    id: "1",
+    name: "Classic Roast Chicken",
+    category: "poultry",
     cookTime: 75,
     servings: 4,
-    difficulty: 'Easy',
+    difficulty: "Easy",
     rating: 4.8,
     temperature: 200,
-    image: 'roast chicken',
-    description: 'Perfectly seasoned roast chicken with crispy skin',
-    isFavorite: true
+    image: "roast chicken",
+    description: "Perfectly seasoned roast chicken with crispy skin",
+    isFavorite: true,
   },
   {
-    id: '2',
-    name: 'Chocolate Chip Cookies',
-    category: 'desserts',
+    id: "2",
+    name: "Chocolate Chip Cookies",
+    category: "desserts",
     cookTime: 12,
     servings: 24,
-    difficulty: 'Easy',
+    difficulty: "Easy",
     rating: 4.9,
     temperature: 175,
-    image: 'chocolate chip cookies',
-    description: 'Soft and chewy cookies with premium chocolate chips',
-    isFavorite: false
+    image: "chocolate chip cookies",
+    description: "Soft and chewy cookies with premium chocolate chips",
+    isFavorite: false,
   },
   {
-    id: '3',
-    name: 'Beef Wellington',
-    category: 'meat',
+    id: "3",
+    name: "Beef Wellington",
+    category: "meat",
     cookTime: 45,
     servings: 6,
-    difficulty: 'Hard',
+    difficulty: "Hard",
     rating: 4.6,
     temperature: 220,
-    image: 'beef wellington',
-    description: 'Tender beef fillet wrapped in puff pastry',
-    isFavorite: true
+    image: "beef wellington",
+    description: "Tender beef fillet wrapped in puff pastry",
+    isFavorite: true,
   },
   {
-    id: '4',
-    name: 'Margherita Pizza',
-    category: 'pizza',
+    id: "4",
+    name: "Margherita Pizza",
+    category: "pizza",
     cookTime: 15,
     servings: 2,
-    difficulty: 'Medium',
+    difficulty: "Medium",
     rating: 4.7,
     temperature: 250,
-    image: 'margherita pizza',
-    description: 'Classic Italian pizza with fresh basil and mozzarella',
-    isFavorite: false
+    image: "margherita pizza",
+    description: "Classic Italian pizza with fresh basil and mozzarella",
+    isFavorite: false,
   },
   {
-    id: '5',
-    name: 'Salmon Fillet',
-    category: 'fish',
+    id: "5",
+    name: "Salmon Fillet",
+    category: "fish",
     cookTime: 20,
     servings: 2,
-    difficulty: 'Easy',
+    difficulty: "Easy",
     rating: 4.5,
     temperature: 180,
-    image: 'salmon fillet',
-    description: 'Perfectly cooked salmon with herbs and lemon',
-    isFavorite: false
+    image: "salmon fillet",
+    description: "Perfectly cooked salmon with herbs and lemon",
+    isFavorite: false,
   },
   {
-    id: '6',
-    name: 'Sourdough Bread',
-    category: 'bread',
+    id: "6",
+    name: "Sourdough Bread",
+    category: "bread",
     cookTime: 35,
     servings: 8,
-    difficulty: 'Medium',
+    difficulty: "Medium",
     rating: 4.4,
     temperature: 230,
-    image: 'sourdough bread',
-    description: 'Artisan sourdough with crispy crust',
-    isFavorite: true
-  }
+    image: "sourdough bread",
+    description: "Artisan sourdough with crispy crust",
+    isFavorite: true,
+  },
 ];
 
-export function RecipeSelector({ onSelectRecipe, onBack }: RecipeSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+export function RecipeSelector({
+  onSelectRecipe,
+  onBack,
+}: RecipeSelectorProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const categories = [
-    { id: 'all', name: 'All Recipes', icon: ChefHat },
-    { id: 'poultry', name: 'Poultry', icon: ChefHat },
-    { id: 'meat', name: 'Meat', icon: ChefHat },
-    { id: 'fish', name: 'Fish', icon: ChefHat },
-    { id: 'desserts', name: 'Desserts', icon: ChefHat },
-    { id: 'bread', name: 'Bread', icon: ChefHat },
-    { id: 'pizza', name: 'Pizza', icon: ChefHat },
+    { id: "all", name: "All Recipes", icon: ChefHat },
+    { id: "poultry", name: "Poultry", icon: ChefHat },
+    { id: "meat", name: "Meat", icon: ChefHat },
+    { id: "fish", name: "Fish", icon: ChefHat },
+    { id: "desserts", name: "Desserts", icon: ChefHat },
+    { id: "bread", name: "Bread", icon: ChefHat },
+    { id: "pizza", name: "Pizza", icon: ChefHat },
   ];
 
-  const filteredRecipes = sampleRecipes.filter(recipe => {
-    const matchesSearch = recipe.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || recipe.category === selectedCategory;
+  const filteredRecipes = sampleRecipes.filter((recipe) => {
+    const matchesSearch = recipe.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || recipe.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const favoriteRecipes = sampleRecipes.filter(recipe => recipe.isFavorite);
+  const favoriteRecipes = sampleRecipes.filter((recipe) => recipe.isFavorite);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "Easy":
+        return "bg-green-100 text-green-800";
+      case "Medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "Hard":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const RecipeCard = ({ recipe }: { recipe: Recipe }) => (
-    <Card 
+    <Card
       className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={() => onSelectRecipe(recipe)}
     >
@@ -211,7 +221,11 @@ export function RecipeSelector({ onSelectRecipe, onBack }: RecipeSelectorProps) 
         {/* Category Tabs */}
         <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 mb-6">
           {categories.map((category) => (
-            <TabsTrigger key={category.id} value={category.id} className="text-xs">
+            <TabsTrigger
+              key={category.id}
+              value={category.id}
+              className="text-xs"
+            >
               {category.name}
             </TabsTrigger>
           ))}
@@ -228,7 +242,11 @@ export function RecipeSelector({ onSelectRecipe, onBack }: RecipeSelectorProps) 
 
         {/* Category-specific content */}
         {categories.slice(1).map((category) => (
-          <TabsContent key={category.id} value={category.id} className="space-y-6">
+          <TabsContent
+            key={category.id}
+            value={category.id}
+            className="space-y-6"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRecipes.map((recipe) => (
                 <RecipeCard key={recipe.id} recipe={recipe} />

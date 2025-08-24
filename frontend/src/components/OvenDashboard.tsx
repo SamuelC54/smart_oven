@@ -1,8 +1,16 @@
-import React from 'react';
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
-import { Thermometer, Clock, Droplets, ChefHat, Power, Settings, Pause, Play } from "lucide-react";
+import {
+  Thermometer,
+  Clock,
+  Droplets,
+  ChefHat,
+  Power,
+  Settings,
+  Pause,
+  Play,
+} from "lucide-react";
 
 interface OvenDashboardProps {
   currentTemp: number;
@@ -23,10 +31,10 @@ export function OvenDashboard({
   ingredientTemp,
   isRunning,
   onToggleRunning,
-  onOpenSettings
+  onOpenSettings,
 }: OvenDashboardProps) {
   const tempProgress = (currentTemp / targetTemp) * 100;
-  
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -65,9 +73,14 @@ export function OvenDashboard({
         <div className="space-y-4">
           <Thermometer className="w-12 h-12 mx-auto text-orange-600" />
           <div className="space-y-2">
-            <div className="text-6xl font-bold text-gray-900">{currentTemp}°</div>
+            <div className="text-6xl font-bold text-gray-900">
+              {currentTemp}°
+            </div>
             <div className="text-xl text-gray-600">Target: {targetTemp}°C</div>
-            <Progress value={tempProgress} className="w-full h-3 bg-orange-100" />
+            <Progress
+              value={tempProgress}
+              className="w-full h-3 bg-orange-100"
+            />
             <div className="text-sm text-gray-500">
               {tempProgress.toFixed(0)}% to target temperature
             </div>
@@ -83,7 +96,9 @@ export function OvenDashboard({
             <Clock className="w-6 h-6 text-blue-600" />
             <h3 className="text-lg font-medium">Timer</h3>
           </div>
-          <div className="text-3xl font-bold text-blue-600 mb-2">{timeRemaining}</div>
+          <div className="text-3xl font-bold text-blue-600 mb-2">
+            {timeRemaining}
+          </div>
           <div className="text-sm text-gray-500">Remaining</div>
         </Card>
 
@@ -93,7 +108,9 @@ export function OvenDashboard({
             <Droplets className="w-6 h-6 text-cyan-600" />
             <h3 className="text-lg font-medium">Humidity</h3>
           </div>
-          <div className="text-3xl font-bold text-cyan-600 mb-2">{humidity}%</div>
+          <div className="text-3xl font-bold text-cyan-600 mb-2">
+            {humidity}%
+          </div>
           <Progress value={humidity} className="w-full h-2 bg-cyan-100" />
         </Card>
 
@@ -103,7 +120,9 @@ export function OvenDashboard({
             <Thermometer className="w-6 h-6 text-green-600" />
             <h3 className="text-lg font-medium">Ingredient Temp</h3>
           </div>
-          <div className="text-3xl font-bold text-green-600 mb-2">{ingredientTemp}°</div>
+          <div className="text-3xl font-bold text-green-600 mb-2">
+            {ingredientTemp}°
+          </div>
           <div className="text-sm text-gray-500">Internal temperature</div>
         </Card>
       </div>

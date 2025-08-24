@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
+import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
 import { Slider } from "./ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
   ArrowLeft,
-  Thermometer, 
-  Clock, 
-  Volume2, 
-  Lightbulb, 
-  Shield, 
-  Wifi, 
+  Thermometer,
+  Volume2,
+  Lightbulb,
+  Shield,
   Save,
   RotateCcw,
   Zap,
-  Wind
+  Wind,
 } from "lucide-react";
 
 interface ThermomixSettingsProps {
@@ -25,53 +29,52 @@ interface ThermomixSettingsProps {
 
 export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
   const [settings, setSettings] = useState({
-    temperatureUnit: 'celsius',
+    temperatureUnit: "celsius",
     preheating: true,
     alertSound: true,
     alertVolume: 75,
-    cookingMode: 'conventional',
+    cookingMode: "conventional",
     fanSpeed: 50,
     childLock: false,
     autoShutoff: true,
     ovenLight: true,
     brightness: 80,
-    nightMode: false
+    nightMode: false,
   });
 
   const handleSettingChange = (key: string, value: any) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
   const resetToDefaults = () => {
     setSettings({
-      temperatureUnit: 'celsius',
+      temperatureUnit: "celsius",
       preheating: true,
       alertSound: true,
       alertVolume: 75,
-      cookingMode: 'conventional',
+      cookingMode: "conventional",
       fanSpeed: 50,
       childLock: false,
       autoShutoff: true,
       ovenLight: true,
       brightness: 80,
-      nightMode: false
+      nightMode: false,
     });
   };
 
   const cookingModes = [
-    { value: 'conventional', label: 'Conventional', icon: '🔥' },
-    { value: 'convection', label: 'Convection', icon: '🌪️' },
-    { value: 'grill', label: 'Grill', icon: '🔥' },
-    { value: 'steam', label: 'Steam', icon: '💨' },
-    { value: 'combination', label: 'Combo', icon: '⚡' }
+    { value: "conventional", label: "Conventional", icon: "🔥" },
+    { value: "convection", label: "Convection", icon: "🌪️" },
+    { value: "grill", label: "Grill", icon: "🔥" },
+    { value: "steam", label: "Steam", icon: "💨" },
+    { value: "combination", label: "Combo", icon: "⚡" },
   ];
 
   return (
     <div className="h-full flex flex-col p-3 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-      
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -85,9 +88,9 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
           </Button>
           <h1 className="text-xl font-medium text-gray-800">Settings</h1>
         </div>
-        
+
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant="outline"
             size="sm"
             onClick={resetToDefaults}
@@ -96,7 +99,7 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
             <RotateCcw className="w-3 h-3 mr-1" />
             Reset
           </Button>
-          <Button 
+          <Button
             size="sm"
             onClick={() => onSave(settings)}
             className="rounded-xl px-3 text-xs"
@@ -108,7 +111,6 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-4">
-        
         {/* Cooking Mode */}
         <Card className="p-4 rounded-2xl border-2 shadow-md">
           <div className="flex items-center gap-2 mb-3">
@@ -117,14 +119,16 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
             </div>
             <h2 className="text-lg font-medium text-gray-800">Cooking Mode</h2>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-2">
-            {cookingModes.map(mode => (
+            {cookingModes.map((mode) => (
               <Button
                 key={mode.value}
-                variant={settings.cookingMode === mode.value ? "default" : "outline"}
+                variant={
+                  settings.cookingMode === mode.value ? "default" : "outline"
+                }
                 size="sm"
-                onClick={() => handleSettingChange('cookingMode', mode.value)}
+                onClick={() => handleSettingChange("cookingMode", mode.value)}
                 className="h-12 rounded-xl border flex-col gap-1 text-xs"
               >
                 <span className="text-base">{mode.icon}</span>
@@ -142,13 +146,15 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
             </div>
             <h3 className="text-lg font-medium text-gray-800">Temperature</h3>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-700 font-medium">Unit</span>
-              <Select 
-                value={settings.temperatureUnit} 
-                onValueChange={(value) => handleSettingChange('temperatureUnit', value)}
+              <Select
+                value={settings.temperatureUnit}
+                onValueChange={(value) =>
+                  handleSettingChange("temperatureUnit", value)
+                }
               >
                 <SelectTrigger className="w-16 h-8 rounded-lg text-xs">
                   <SelectValue />
@@ -159,15 +165,21 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-gray-700 font-medium">Auto Preheat</span>
-                <p className="text-xs text-gray-500">Start heating automatically</p>
+                <span className="text-sm text-gray-700 font-medium">
+                  Auto Preheat
+                </span>
+                <p className="text-xs text-gray-500">
+                  Start heating automatically
+                </p>
               </div>
               <Switch
                 checked={settings.preheating}
-                onCheckedChange={(checked) => handleSettingChange('preheating', checked)}
+                onCheckedChange={(checked) =>
+                  handleSettingChange("preheating", checked)
+                }
               />
             </div>
           </div>
@@ -181,15 +193,21 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
             </div>
             <h3 className="text-lg font-medium text-gray-800">Fan Control</h3>
           </div>
-          
+
           <div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-700 font-medium">Fan Speed</span>
-              <span className="text-sm font-bold text-blue-600">{settings.fanSpeed}%</span>
+              <span className="text-sm text-gray-700 font-medium">
+                Fan Speed
+              </span>
+              <span className="text-sm font-bold text-blue-600">
+                {settings.fanSpeed}%
+              </span>
             </div>
             <Slider
               value={[settings.fanSpeed]}
-              onValueChange={([value]) => handleSettingChange('fanSpeed', value)}
+              onValueChange={([value]) =>
+                handleSettingChange("fanSpeed", value)
+              }
               max={100}
               step={10}
               className="h-2"
@@ -209,28 +227,40 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
             </div>
             <h3 className="text-lg font-medium text-gray-800">Sound</h3>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-gray-700 font-medium">Alert Sounds</span>
-                <p className="text-xs text-gray-500">Cooking completion alerts</p>
+                <span className="text-sm text-gray-700 font-medium">
+                  Alert Sounds
+                </span>
+                <p className="text-xs text-gray-500">
+                  Cooking completion alerts
+                </p>
               </div>
               <Switch
                 checked={settings.alertSound}
-                onCheckedChange={(checked) => handleSettingChange('alertSound', checked)}
+                onCheckedChange={(checked) =>
+                  handleSettingChange("alertSound", checked)
+                }
               />
             </div>
-            
+
             {settings.alertSound && (
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-700 font-medium">Volume</span>
-                  <span className="text-sm font-bold text-green-600">{settings.alertVolume}%</span>
+                  <span className="text-sm text-gray-700 font-medium">
+                    Volume
+                  </span>
+                  <span className="text-sm font-bold text-green-600">
+                    {settings.alertVolume}%
+                  </span>
                 </div>
                 <Slider
                   value={[settings.alertVolume]}
-                  onValueChange={([value]) => handleSettingChange('alertVolume', value)}
+                  onValueChange={([value]) =>
+                    handleSettingChange("alertVolume", value)
+                  }
                   max={100}
                   step={5}
                   className="h-2"
@@ -248,30 +278,40 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
             </div>
             <h3 className="text-lg font-medium text-gray-800">Display</h3>
           </div>
-          
+
           <div className="space-y-3">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-700 font-medium">Brightness</span>
-                <span className="text-sm font-bold text-yellow-600">{settings.brightness}%</span>
+                <span className="text-sm text-gray-700 font-medium">
+                  Brightness
+                </span>
+                <span className="text-sm font-bold text-yellow-600">
+                  {settings.brightness}%
+                </span>
               </div>
               <Slider
                 value={[settings.brightness]}
-                onValueChange={([value]) => handleSettingChange('brightness', value)}
+                onValueChange={([value]) =>
+                  handleSettingChange("brightness", value)
+                }
                 max={100}
                 step={10}
                 className="h-2"
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-gray-700 font-medium">Night Mode</span>
+                <span className="text-sm text-gray-700 font-medium">
+                  Night Mode
+                </span>
                 <p className="text-xs text-gray-500">Reduce blue light</p>
               </div>
               <Switch
                 checked={settings.nightMode}
-                onCheckedChange={(checked) => handleSettingChange('nightMode', checked)}
+                onCheckedChange={(checked) =>
+                  handleSettingChange("nightMode", checked)
+                }
               />
             </div>
           </div>
@@ -285,38 +325,50 @@ export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
             </div>
             <h3 className="text-lg font-medium text-gray-800">Safety</h3>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-gray-700 font-medium">Child Lock</span>
+                <span className="text-sm text-gray-700 font-medium">
+                  Child Lock
+                </span>
                 <p className="text-xs text-gray-500">Prevent accidents</p>
               </div>
               <Switch
                 checked={settings.childLock}
-                onCheckedChange={(checked) => handleSettingChange('childLock', checked)}
+                onCheckedChange={(checked) =>
+                  handleSettingChange("childLock", checked)
+                }
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-gray-700 font-medium">Auto Shutoff</span>
+                <span className="text-sm text-gray-700 font-medium">
+                  Auto Shutoff
+                </span>
                 <p className="text-xs text-gray-500">Auto stop when done</p>
               </div>
               <Switch
                 checked={settings.autoShutoff}
-                onCheckedChange={(checked) => handleSettingChange('autoShutoff', checked)}
+                onCheckedChange={(checked) =>
+                  handleSettingChange("autoShutoff", checked)
+                }
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-gray-700 font-medium">Oven Light</span>
+                <span className="text-sm text-gray-700 font-medium">
+                  Oven Light
+                </span>
                 <p className="text-xs text-gray-500">Interior lighting</p>
               </div>
               <Switch
                 checked={settings.ovenLight}
-                onCheckedChange={(checked) => handleSettingChange('ovenLight', checked)}
+                onCheckedChange={(checked) =>
+                  handleSettingChange("ovenLight", checked)
+                }
               />
             </div>
           </div>
