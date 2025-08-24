@@ -235,13 +235,13 @@ def test_max31865_configs():
     
     results = {}
     
-    # Test different configurations
+    # Test different configurations - start with 2-wire which is simpler
     configs = [
         {"name": "PT100_2wire", "rtd_nominal": 100, "wires": 2},
-        {"name": "PT100_3wire", "rtd_nominal": 100, "wires": 3},
-        {"name": "PT100_4wire", "rtd_nominal": 100, "wires": 4},
         {"name": "PT1000_2wire", "rtd_nominal": 1000, "wires": 2},
+        {"name": "PT100_3wire", "rtd_nominal": 100, "wires": 3},
         {"name": "PT1000_3wire", "rtd_nominal": 1000, "wires": 3},
+        {"name": "PT100_4wire", "rtd_nominal": 100, "wires": 4},
         {"name": "PT1000_4wire", "rtd_nominal": 1000, "wires": 4},
     ]
     

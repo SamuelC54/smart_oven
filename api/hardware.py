@@ -38,6 +38,11 @@ class MAX31865Adafruit:
     """MAX31865 implementation using Adafruit CircuitPython library"""
     
     def __init__(self, rtd_nominal=100, ref_resistor=430, wires=3):
+        # Store configuration parameters
+        self.rtd_nominal = rtd_nominal
+        self.ref_resistor = ref_resistor
+        self.wires = wires
+        
         # Create sensor object, communicating over the board's default SPI bus
         self.spi = board.SPI()
         
