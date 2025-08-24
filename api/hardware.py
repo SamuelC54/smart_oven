@@ -38,8 +38,8 @@ class MAX31865Adafruit:
     """MAX31865 implementation using Adafruit CircuitPython library"""
     
     def __init__(self, rtd_nominal=100, ref_resistor=430, wires=3):
-        # Initialize SPI bus
-        self.spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
+        # Create sensor object, communicating over the board's default SPI bus
+        self.spi = board.SPI()
         
         # Initialize CS pin based on configuration
         if CS_NAME == "CE0":
@@ -63,8 +63,9 @@ class MAX31865Adafruit:
     def temperature(self):
         """Get temperature in Celsius"""
         try:
+            # Read temperature
             temp = self.sensor.temperature
-            logger.info(f"Temperature reading: {temp:.2f}°C")
+            logger.info(f"Temperature: {temp:.3f}°C")
             return temp
         except Exception as e:
             logger.error(f"Error reading temperature: {e}")
