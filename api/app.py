@@ -374,7 +374,7 @@ def get_gpio_status():
         }
         
     except subprocess.TimeoutExpired:
-        logger.error("Timeout getting GPIO status")
+        logger.error("Timeout getting GPIO status.")
         raise HTTPException(status_code=500, detail="Timeout getting GPIO status")
     except Exception as e:
         logger.error(f"Failed to get GPIO status: {e}")
