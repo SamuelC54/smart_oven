@@ -106,27 +106,25 @@ jobs:
     needs: determine-changes
     if: needs.determine-changes.outputs.systemd-should-run == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - name: Install/Update systemd units from repo
+        run: |
+          # Copy unit files from the repo into systemd dir
+          sudo install -m 0644 deploy/systemd/smart-oven-api.service /etc/systemd/system/smart-oven-api.service
+          sudo install -m 0644 deploy/systemd/smart-oven-web.service /etc/systemd/system/smart-oven-web.service
+          sudo install -m 0644 deploy/systemd/smart-oven-display.service /etc/systemd/system/smart-oven-display.service
+          sudo install -m 0644 deploy/systemd/github-runner.service /etc/systemd/system/github-runner.service
 
-             - name: Install/Update systemd units from repo
-         run: |
-           # Copy unit files from the repo into systemd dir
-           sudo install -m 0644 deploy/systemd/smart-oven-api.service /etc/systemd/system/smart-oven-api.service
-           sudo install -m 0644 deploy/systemd/smart-oven-web.service /etc/systemd/system/smart-oven-web.service
-           sudo install -m 0644 deploy/systemd/smart-oven-display.service /etc/systemd/system/smart-oven-display.service
-           sudo install -m 0644 deploy/systemd/github-runner.service /etc/systemd/system/github-runner.service
-           
-           # Pick chromium path if different:
-           if [ -x /usr/bin/chromium ] && ! grep -q '/usr/bin/chromium ' /etc/systemd/system/smart-oven-display.service; then
-             echo "Warning: chromium path might be /usr/bin/chromium on this system."
-           fi
-           
-           # Reload & enable services
-           sudo systemctl daemon-reload
-           sudo systemctl enable smart-oven-api.service
-           sudo systemctl enable smart-oven-web.service
-           sudo systemctl enable smart-oven-display.service
-           sudo systemctl enable github-runner.service
+          # Pick chromium path if different:
+          if [ -x /usr/bin/chromium ] && ! grep -q '/usr/bin/chromium ' /etc/systemd/system/smart-oven-display.service; then
+            echo "Warning: chromium path might be /usr/bin/chromium on this system."
+          fi
+
+          # Reload & enable services
+          sudo systemctl daemon-reload
+          sudo systemctl enable smart-oven-api.service
+          sudo systemctl enable smart-oven-web.service
+          sudo systemctl enable smart-oven-display.service
+          sudo systemctl enable github-runner.service
 
   api:
     runs-on: [self-hosted]
