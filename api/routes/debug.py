@@ -164,12 +164,22 @@ def debug_max31865():
             debug_info["sensor_config"] = {
                 "auto_convert": sensor.sensor.auto_convert,
                 "bias": sensor.sensor.bias,
-                "rtd_nominal": sensor.sensor._rtd_nominal,
-                "ref_resistor": sensor.sensor._ref_resistor,
-                "wires": sensor.sensor._wires
+                "rtd_nominal": getattr(sensor.sensor, '_rtd_nominal', 'Unknown'),
+                "ref_resistor": getattr(sensor.sensor, '_ref_resistor', 'Unknown'),
+                "wires": getattr(sensor.sensor, '_wires', 'Unknown')
             }
         except Exception as e:
             debug_info["config_error"] = str(e)
+        
+        # Add wrapper class configuration (our actual config)
+        try:
+            debug_info["wrapper_config"] = {
+                "rtd_nominal": sensor.rtd_nominal,
+                "ref_resistor": sensor.ref_resistor,
+                "wires": sensor.wires
+            }
+        except Exception as e:
+            debug_info["wrapper_config_error"] = str(e)
         
         # Add diagnostic recommendations
         debug_info["diagnostics"] = []
@@ -214,3 +224,61 @@ def clear_max31865_faults():
     except Exception as e:
         logger.error(f"Failed to clear MAX31865 faults: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to clear faults: {e}")
+
+@router.get("/debug/max31865/test-configs")
+def test_max31865_configs():
+    """Test MAX31865 with different configurations to find the right one"""
+    logger.info("MAX31865 configuration test requested")
+    
+    if not HARDWARE_AVAILABLE:
+        raise HTTPException(status_code=500, detail="Hardware libraries not available")
+    
+    results = {}
+    
+    # Test different configurations
+    configs = [
+        {"name": "PT100_2wire", "rtd_nominal": 100, "wires": 2},
+        {"name": "PT100_3wire", "rtd_nominal": 100, "wires": 3},
+        {"name": "PT100_4wire", "rtd_nominal": 100, "wires": 4},
+        {"name": "PT1000_2wire", "rtd_nominal": 1000, "wires": 2},
+        {"name": "PT1000_3wire", "rtd_nominal": 1000, "wires": 3},
+        {"name": "PT1000_4wire", "rtd_nominal": 1000, "wires": 4},
+    ]
+    
+    for config in configs:
+        try:
+            # Create temporary sensor with this config
+            from hardware import MAX31865Adafruit
+            temp_sensor = MAX31865Adafruit(
+                rtd_nominal=config["rtd_nominal"],
+                ref_resistor=430,
+                wires=config["wires"]
+            )
+            
+            # Test reading
+            temp = temp_sensor.sensor.temperature
+            resistance = temp_sensor.sensor.resistance
+            fault = temp_sensor.sensor.fault
+            
+            results[config["name"]] = {
+                "temperature": temp,
+                "resistance": resistance,
+                "fault": fault,
+                "valid": -200 <= temp <= 850 and resistance > 0
+            }
+            
+            # Clean up
+            temp_sensor.close()
+            
+        except Exception as e:
+            results[config["name"]] = {
+                "error": str(e),
+                "valid": False
+            }
+    
+    logger.info(f"Configuration test completed: {results}")
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "configurations_tested": results,
+        "recommendation": "Look for configurations with valid=True and reasonable resistance values"
+    }
