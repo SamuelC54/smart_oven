@@ -59,6 +59,15 @@ class MAX31865Adafruit:
         )
         
         logger.info(f"MAX31865 initialized with CS={CS_NAME}, wires={wires}")
+        logger.info(f"RTD nominal: {rtd_nominal}Ω, Ref resistor: {ref_resistor}Ω")
+        
+        # Log configuration for debugging
+        if rtd_nominal == 100:
+            logger.info("Configured for PT100 sensor")
+        elif rtd_nominal == 1000:
+            logger.info("Configured for PT1000 sensor")
+        else:
+            logger.warning(f"Unknown RTD nominal value: {rtd_nominal}Ω")
     
     def temperature(self):
         """Get temperature in Celsius"""
@@ -66,6 +75,19 @@ class MAX31865Adafruit:
             # Read temperature
             temp = self.sensor.temperature
             logger.info(f"Temperature: {temp:.3f}°C")
+            
+            # Check for invalid readings and log sensor state
+            if temp < -200 or temp > 850:
+                logger.warning(f"Invalid temperature reading: {temp:.3f}°C")
+                try:
+                    # Try to get sensor fault status
+                    fault = self.sensor.fault
+                    if fault:
+                        logger.error(f"MAX31865 fault detected: {fault}")
+                except:
+                    pass
+                logger.warning("Check wiring and sensor configuration")
+            
             return temp
         except Exception as e:
             logger.error(f"Error reading temperature: {e}")
