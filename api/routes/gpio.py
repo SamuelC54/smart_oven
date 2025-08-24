@@ -142,20 +142,20 @@ def get_gpio_status():
         except:
             gpio_info['pin_check'] = "Failed to check GPIO pins"
         
-                 # Get current sensor configuration
-         try:
-             sensor = get_sensor()
-             sensor_initialized = sensor is not None
-         except:
-             sensor_initialized = False
-         
-         sensor_config = {
-             "rtd_nominal": RTD_NOMINAL,
-             "ref_resistor": REF_RESISTOR,
-             "wires": WIRES,
-             "cs_name": CS_NAME,
-             "sensor_initialized": sensor_initialized
-         }
+        # Get current sensor configuration
+        try:
+            sensor = get_sensor()
+            sensor_initialized = sensor is not None
+        except:
+            sensor_initialized = False
+        
+        sensor_config = {
+            "rtd_nominal": RTD_NOMINAL,
+            "ref_resistor": REF_RESISTOR,
+            "wires": WIRES,
+            "cs_name": CS_NAME,
+            "sensor_initialized": sensor_initialized
+        }
         
         # Try to get basic system info
         system_info = {}
