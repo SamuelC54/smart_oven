@@ -1,603 +1,515 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Slider } from "./ui/slider";
-import {
-  Play,
-  Pause,
+import { Switch } from "./ui/switch";
+import { 
+  Play, 
+  Pause, 
   RotateCcw,
   Plus,
   Minus,
   Thermometer,
   Clock,
+  Droplets,
   ChefHat,
   Settings,
   BookOpen,
   CheckCircle,
+  AlertCircle,
   Edit,
+  Timer,
+  Zap,
+  Wind,
+  X
 } from "lucide-react";
-import { XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
+
+type CookingMode = 'timer' | 'probe' | null;
 
 interface EnhancedThermomixDashboardProps {
   currentTemp: number;
   targetTemp: number;
   timeRemaining: string;
   humidity: number;
+  targetHumidity: number;
+  fanSpeed: number;
   ingredientTemp: number;
   isRunning: boolean;
   currentPhase: number;
   totalPhases: number;
   phaseName: string;
+  cookingMode: CookingMode;
+  probeTargetTemp: number;
+  customTimer: { hours: number; minutes: number };
   onToggleRunning: () => void;
   onOpenSettings: () => void;
   onOpenRecipes: () => void;
   onTempAdjust: (delta: number) => void;
   onTimeAdjust: (minutes: number) => void;
-  onSetupMode: () => void;
-  tempHistory: Array<{ time: string; temp: number; humidity: number }>;
+  onAddTimer: () => void;
+  onAddProbe: () => void;
+  onRemoveTimer: () => void;
+  onRemoveProbe: () => void;
+  onHumidityChange: (value: number) => void;
+  onFanSpeedChange: (value: number) => void;
+  onProbeTargetChange: (value: number) => void;
+  onCustomTimerChange: (hours: number, minutes: number) => void;
+  tempHistory: Array<{time: string, ovenTemp: number, humidity: number, foodTemp: number}>;
 }
-
-type InterfaceMode = "standby" | "setup" | "running";
 
 export function EnhancedThermomixDashboard({
   currentTemp,
   targetTemp,
   timeRemaining,
   humidity,
+  targetHumidity,
+  fanSpeed,
   ingredientTemp,
   isRunning,
   currentPhase,
   totalPhases,
   phaseName,
+  cookingMode,
+  probeTargetTemp,
+  customTimer,
   onToggleRunning,
   onOpenSettings,
   onOpenRecipes,
   onTempAdjust,
   onTimeAdjust,
-  tempHistory,
+  onAddTimer,
+  onAddProbe,
+  onRemoveTimer,
+  onRemoveProbe,
+  onHumidityChange,
+  onFanSpeedChange,
+  onProbeTargetChange,
+  onCustomTimerChange,
+  tempHistory
 }: EnhancedThermomixDashboardProps) {
-  const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>("standby");
-  const [setupTemp, setSetupTemp] = useState(targetTemp);
-  const [setupTime, setSetupTime] = useState({ hours: 1, minutes: 30 });
-  const [stopCondition, setStopCondition] = useState<"time" | "temperature">(
-    "time"
-  );
-
   const tempProgress = Math.min((currentTemp / targetTemp) * 100, 100);
   const isHeating = currentTemp < targetTemp && isRunning;
-  const phaseProgress =
-    totalPhases > 0 ? ((currentPhase + 1) / totalPhases) * 100 : 0;
-
-  useEffect(() => {
-    if (isRunning) {
-      setInterfaceMode("running");
-    } else {
-      setInterfaceMode("standby");
-    }
-  }, [isRunning]);
-
-  const handleStartSetup = () => {
-    setInterfaceMode("setup");
-    setSetupTemp(targetTemp);
-    const [hours, minutes] = timeRemaining.split(":").slice(0, 2).map(Number);
-    setSetupTime({ hours, minutes });
-  };
-
-  const handleConfirmSetup = () => {
-    onTempAdjust(setupTemp - targetTemp);
-    const totalMinutes = setupTime.hours * 60 + setupTime.minutes;
-    const currentTotalMinutes = timeRemaining
-      .split(":")
-      .slice(0, 2)
-      .reduce((acc, curr, i) => acc + parseInt(curr) * (i === 0 ? 60 : 1), 0);
-    onTimeAdjust(totalMinutes - currentTotalMinutes);
-    setInterfaceMode("standby");
-  };
-
-  if (interfaceMode === "setup") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-        <div className="max-w-4xl mx-auto">
-          {/* Setup Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                <Edit className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-3xl font-medium text-gray-800">
-                Setup Cooking
-              </h1>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setInterfaceMode("standby")}
-                className="rounded-2xl border-2 px-6"
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleConfirmSetup} className="rounded-2xl px-6">
-                Confirm
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Temperature Setup */}
-            <Card className="p-8 rounded-3xl border-2 shadow-lg">
-              <div className="text-center space-y-6">
-                <div className="flex items-center justify-center gap-2 mb-6">
-                  <Thermometer className="w-6 h-6 text-orange-500" />
-                  <h2 className="text-2xl font-medium text-gray-800">
-                    Temperature
-                  </h2>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="text-6xl font-bold text-orange-600 mb-2">
-                      {setupTemp}°
-                    </div>
-                    <div className="text-lg text-gray-600">
-                      Target Temperature
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <Slider
-                      value={[setupTemp]}
-                      onValueChange={([value]) => setSetupTemp(value)}
-                      min={50}
-                      max={300}
-                      step={5}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>50°C</span>
-                      <span>300°C</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setSetupTemp(Math.max(50, setupTemp - 25))}
-                      className="w-12 h-12 rounded-full"
-                    >
-                      <Minus className="w-5 h-5" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        setSetupTemp(Math.min(300, setupTemp + 25))
-                      }
-                      className="w-12 h-12 rounded-full"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Timer Setup */}
-            <Card className="p-8 rounded-3xl border-2 shadow-lg">
-              <div className="text-center space-y-6">
-                <div className="flex items-center justify-center gap-2 mb-6">
-                  <Clock className="w-6 h-6 text-blue-500" />
-                  <h2 className="text-2xl font-medium text-gray-800">Timer</h2>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="text-6xl font-bold text-blue-600 mb-2">
-                      {setupTime.hours}:
-                      {setupTime.minutes.toString().padStart(2, "0")}
-                    </div>
-                    <div className="text-lg text-gray-600">Cooking Time</div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Hours
-                      </label>
-                      <Slider
-                        value={[setupTime.hours]}
-                        onValueChange={([value]) =>
-                          setSetupTime((prev) => ({ ...prev, hours: value }))
-                        }
-                        min={0}
-                        max={12}
-                        step={1}
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Minutes
-                      </label>
-                      <Slider
-                        value={[setupTime.minutes]}
-                        onValueChange={([value]) =>
-                          setSetupTime((prev) => ({ ...prev, minutes: value }))
-                        }
-                        min={0}
-                        max={59}
-                        step={5}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Stop Condition */}
-          <Card className="p-6 rounded-3xl border-2 shadow-lg mt-8">
-            <h3 className="text-xl font-medium text-gray-800 mb-4">
-              Stop Condition
-            </h3>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  id="stop-time"
-                  name="stopCondition"
-                  checked={stopCondition === "time"}
-                  onChange={() => setStopCondition("time")}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="stop-time" className="text-gray-700">
-                  Stop when timer ends
-                </label>
-              </div>
-              <div className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  id="stop-temp"
-                  name="stopCondition"
-                  checked={stopCondition === "temperature"}
-                  onChange={() => setStopCondition("temperature")}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="stop-temp" className="text-gray-700">
-                  Stop when temperature reached
-                </label>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const phaseProgress = totalPhases > 0 ? ((currentPhase + 1) / totalPhases) * 100 : 0;
+  const humidityProgress = Math.min((humidity / targetHumidity) * 100, 100);
+  const probeProgress = cookingMode === 'probe' ? Math.min((ingredientTemp / probeTargetTemp) * 100, 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-              <ChefHat className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-medium text-gray-800">Smart Oven</h1>
+    <div className="h-full flex flex-col p-3 bg-gradient-to-br from-gray-50 to-gray-100">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
+            <ChefHat className="w-4 h-4 text-white" />
           </div>
-
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onOpenRecipes}
-              className="rounded-2xl px-6 py-3 border-2"
-            >
-              <BookOpen className="w-5 h-5 mr-2" />
-              Recipes
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onOpenSettings}
-              className="rounded-2xl px-6 py-3 border-2"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
-          </div>
+          <h1 className="text-lg font-medium text-gray-800">Smart Oven</h1>
         </div>
+        
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenRecipes}
+            className="rounded-xl px-3 border-2"
+          >
+            <BookOpen className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenSettings}
+            className="rounded-xl px-3 border-2"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
 
-        {/* Phase Progress (when running) */}
-        {isRunning && totalPhases > 0 && (
-          <Card className="p-6 rounded-3xl border-2 shadow-lg mb-8 bg-blue-50 border-blue-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-blue-600" />
-                <h3 className="text-xl font-medium text-blue-800">
-                  Phase {currentPhase + 1} of {totalPhases}: {phaseName}
-                </h3>
+      {/* Phase Progress (when running) */}
+      {isRunning && totalPhases > 0 && (
+        <Card className="p-3 rounded-2xl border-2 shadow-md mb-3 bg-blue-50 border-blue-200">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-blue-600" />
+              <h3 className="text-sm font-medium text-blue-800">
+                Phase {currentPhase + 1}/{totalPhases}: {phaseName}
+              </h3>
+            </div>
+            <div className="text-sm font-medium text-blue-600">{phaseProgress.toFixed(0)}%</div>
+          </div>
+          <Progress value={phaseProgress} className="h-2 bg-blue-100" />
+        </Card>
+      )}
+
+      <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+        
+        {/* Comprehensive Graph (when running) */}
+        {isRunning && (
+          <Card className="p-3 rounded-2xl border-2 shadow-md">
+            <h3 className="text-sm font-medium text-gray-700 mb-2 text-center">Cooking Progress</h3>
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={tempHistory}>
+                  <XAxis 
+                    dataKey="time" 
+                    tick={{ fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis hide />
+                  <Line 
+                    type="monotone" 
+                    dataKey="ovenTemp" 
+                    stroke="#f97316" 
+                    strokeWidth={2}
+                    dot={false}
+                    name="Oven Temp"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="foodTemp" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    dot={false}
+                    name="Food Temp"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="humidity" 
+                    stroke="#06b6d4" 
+                    strokeWidth={2}
+                    dot={false}
+                    name="Humidity"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex justify-center gap-4 text-xs mt-2">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>Oven</span>
               </div>
-              <div className="text-lg font-medium text-blue-600">
-                {phaseProgress.toFixed(0)}%
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Food</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                <span>Humidity</span>
               </div>
             </div>
-            <Progress value={phaseProgress} className="h-3 bg-blue-100" />
           </Card>
         )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Left Side - Graph */}
-          <div className="space-y-6">
-            <Card className="p-6 rounded-3xl border-2 shadow-lg">
-              <h3 className="text-lg font-medium text-gray-700 mb-4 text-center">
-                Temperature & Humidity
-              </h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={tempHistory}>
-                    <XAxis dataKey="time" hide />
-                    <YAxis hide />
-                    <Area
-                      type="monotone"
-                      dataKey="temp"
-                      stroke="#f97316"
-                      fill="#fed7aa"
-                      strokeWidth={2}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="humidity"
-                      stroke="#06b6d4"
-                      fill="#a7f3d0"
-                      strokeWidth={2}
-                      fillOpacity={0.6}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-300 rounded-full"></div>
-                  <span>Temperature</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-cyan-300 rounded-full"></div>
-                  <span>Humidity</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Status Indicators */}
-            <div className="space-y-4">
-              <Card className="p-4 rounded-2xl border-2 shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-cyan-400"></div>
-                    <span className="text-sm font-medium text-gray-700">
-                      Humidity
-                    </span>
-                  </div>
-                  <span className="text-lg font-bold text-cyan-600">
-                    {humidity}%
-                  </span>
-                </div>
-                <Progress value={humidity} className="h-1 mt-2 bg-cyan-100" />
-              </Card>
-
-              <Card className="p-4 rounded-2xl border-2 shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                    <span className="text-sm font-medium text-gray-700">
-                      Food Temp
-                    </span>
-                  </div>
-                  <span className="text-lg font-bold text-green-600">
-                    {ingredientTemp}°
-                  </span>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">Internal probe</div>
-              </Card>
-            </div>
-          </div>
-
-          {/* Central Circular Display */}
-          <div className="flex justify-center">
-            <div className="relative">
-              {/* Main Circle */}
-              <div className="w-80 h-80 rounded-full bg-white border-8 border-gray-200 shadow-2xl flex items-center justify-center relative overflow-hidden">
-                {/* Progress Ring */}
-                <div className="absolute inset-4">
-                  <svg
-                    className="w-full h-full transform -rotate-90"
-                    viewBox="0 0 100 100"
-                  >
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="45"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                      className="text-gray-200"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="45"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                      strokeDasharray={`${2 * Math.PI * 45}`}
-                      strokeDashoffset={`${
-                        2 * Math.PI * 45 * (1 - tempProgress / 100)
-                      }`}
-                      className={`transition-all duration-1000 ${
-                        isHeating ? "text-orange-500" : "text-green-500"
-                      }`}
-                    />
-                  </svg>
-                </div>
-
-                {/* Center Content */}
-                <div className="text-center z-10">
-                  <div className="text-6xl font-bold text-gray-800 mb-2">
-                    {currentTemp}°
-                  </div>
-                  <div className="text-lg text-gray-500 mb-1">Current</div>
-                  <div className="text-sm text-gray-400 mb-2">
-                    Target: {targetTemp}°
-                  </div>
-                  <div
-                    className={`text-sm px-3 py-1 rounded-full ${
-                      isHeating
-                        ? "bg-orange-100 text-orange-600"
-                        : currentTemp >= targetTemp
-                        ? "bg-green-100 text-green-600"
-                        : "bg-gray-100 text-gray-600"
+        
+        {/* Central Circular Display */}
+        <div className="flex justify-center">
+          <div className="relative">
+            {/* Main Circle */}
+            <div className="w-40 h-40 rounded-full bg-white border-4 border-gray-200 shadow-xl flex items-center justify-center relative overflow-hidden">
+              
+              {/* Progress Ring */}
+              <div className="absolute inset-2">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    fill="none"
+                    className="text-gray-200"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 45}`}
+                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - (cookingMode === 'probe' ? probeProgress : tempProgress) / 100)}`}
+                    className={`transition-all duration-1000 ${
+                      cookingMode === 'probe' 
+                        ? (ingredientTemp >= probeTargetTemp ? 'text-green-500' : 'text-orange-500')
+                        : (isHeating ? 'text-orange-500' : 'text-green-500')
                     }`}
-                  >
-                    {isHeating
-                      ? "Heating..."
-                      : currentTemp >= targetTemp
-                      ? "Ready"
-                      : "Standby"}
-                  </div>
-                </div>
-
-                {/* Pulsing effect when running */}
-                {isRunning && (
-                  <div className="absolute inset-0 rounded-full bg-orange-400/10 animate-pulse" />
-                )}
+                  />
+                </svg>
               </div>
 
-              {/* Central Start/Stop/Setup Button */}
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3">
-                {!isRunning && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={handleStartSetup}
-                    className="w-16 h-16 rounded-full shadow-2xl border-4 border-white"
-                  >
-                    <Edit className="w-6 h-6" />
-                  </Button>
-                )}
-
-                <Button
-                  size="lg"
-                  onClick={onToggleRunning}
-                  className={`w-20 h-20 rounded-full shadow-2xl border-4 border-white text-white transition-all duration-300 ${
-                    isRunning
-                      ? "bg-red-500 hover:bg-red-600 scale-110"
-                      : "bg-green-500 hover:bg-green-600"
-                  }`}
-                >
-                  {isRunning ? (
-                    <Pause className="w-8 h-8" />
-                  ) : (
-                    <Play className="w-8 h-8 ml-1" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Timer & Controls */}
-          <div className="space-y-6">
-            <Card className="p-6 rounded-3xl border-2 shadow-lg">
-              <div className="text-center space-y-4">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <Clock className="w-5 h-5 text-blue-500" />
-                  <span className="text-lg font-medium text-gray-700">
-                    Timer
-                  </span>
-                </div>
-
-                <div className="text-4xl font-bold text-blue-600 mb-2">
-                  {timeRemaining}
-                </div>
-
-                <div className="text-sm text-gray-500">Remaining</div>
-
-                {!isRunning && (
-                  <div className="flex items-center justify-center gap-4 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onTimeAdjust(-15)}
-                      className="w-10 h-10 rounded-full border-2"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onTimeAdjust(15)}
-                      className="w-10 h-10 rounded-full border-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Temperature Controls */}
-            {!isRunning && (
-              <Card className="p-6 rounded-3xl border-2 shadow-lg">
-                <div className="text-center space-y-4">
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <Thermometer className="w-5 h-5 text-orange-500" />
-                    <span className="text-lg font-medium text-gray-700">
-                      Temperature
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-4">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => onTempAdjust(-25)}
-                      className="w-12 h-12 rounded-full border-2"
-                    >
-                      <Minus className="w-5 h-5" />
-                    </Button>
-
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-gray-800">
-                        {targetTemp}°
-                      </div>
-                      <div className="text-sm text-gray-500">Target</div>
+              {/* Center Content */}
+              <div className="text-center z-10">
+                {cookingMode === 'probe' ? (
+                  <>
+                    <div className="text-3xl font-bold text-gray-800 mb-1">
+                      {ingredientTemp}°
                     </div>
-
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => onTempAdjust(25)}
-                      className="w-12 h-12 rounded-full border-2"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </Button>
-                  </div>
+                    <div className="text-xs text-gray-500 mb-1">Food Temp</div>
+                    <div className="text-xs text-gray-400 mb-1">Target: {probeTargetTemp}°</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-gray-800 mb-1">
+                      {currentTemp}°
+                    </div>
+                    <div className="text-xs text-gray-500 mb-1">Current</div>
+                    <div className="text-xs text-gray-400 mb-1">Target: {targetTemp}°</div>
+                  </>
+                )}
+                <div className={`text-xs px-2 py-1 rounded-full ${
+                  cookingMode === 'probe'
+                    ? (ingredientTemp >= probeTargetTemp 
+                       ? 'bg-green-100 text-green-600' 
+                       : 'bg-orange-100 text-orange-600')
+                    : (isHeating 
+                       ? 'bg-orange-100 text-orange-600' 
+                       : currentTemp >= targetTemp 
+                       ? 'bg-green-100 text-green-600'
+                       : 'bg-gray-100 text-gray-600')
+                }`}>
+                  {cookingMode === 'probe' 
+                    ? (ingredientTemp >= probeTargetTemp ? 'Ready' : 'Cooking')
+                    : (isHeating ? 'Heating...' : currentTemp >= targetTemp ? 'Ready' : 'Standby')
+                  }
                 </div>
-              </Card>
-            )}
+              </div>
 
-            {/* Reset Button */}
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full rounded-2xl border-2 py-4"
-              onClick={() => window.location.reload()}
-            >
-              <RotateCcw className="w-5 h-5 mr-2" />
-              Reset All
-            </Button>
+              {/* Pulsing effect when running */}
+              {isRunning && (
+                <div className="absolute inset-0 rounded-full bg-orange-400/10 animate-pulse" />
+              )}
+            </div>
+
+            {/* Central Start/Stop Button */}
+            <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
+              <Button
+                size="lg"
+                onClick={onToggleRunning}
+                className={`w-14 h-14 rounded-full shadow-lg border-2 border-white text-white transition-all duration-300 ${
+                  isRunning 
+                    ? 'bg-red-500 hover:bg-red-600 scale-105' 
+                    : 'bg-green-500 hover:bg-green-600'
+                }`}
+              >
+                {isRunning ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5 ml-1" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Cooking Mode Selection */}
+        <Card className="p-3 rounded-2xl border-2 shadow-md">
+          <h3 className="text-sm font-medium text-gray-800 mb-2">Cooking Mode</h3>
+          
+          {cookingMode === null && (
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={onAddTimer}
+                className="h-10 rounded-xl gap-2 text-xs"
+                variant="outline"
+              >
+                <Timer className="w-3 h-3" />
+                Timer
+              </Button>
+              <Button
+                onClick={onAddProbe}
+                className="h-10 rounded-xl gap-2 text-xs"  
+                variant="outline"
+              >
+                <Thermometer className="w-3 h-3" />
+                Probe
+              </Button>
+            </div>
+          )}
+
+          {cookingMode === 'timer' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Timer Mode</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onRemoveTimer}
+                  className="w-6 h-6 rounded-full p-0"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+              <div className="text-xl font-bold text-center text-blue-600">
+                {timeRemaining}
+              </div>
+              {!isRunning && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-medium text-gray-700">Hours</label>
+                    <Slider
+                      value={[customTimer.hours]}
+                      onValueChange={([value]) => onCustomTimerChange(value, customTimer.minutes)}
+                      min={0}
+                      max={12}
+                      step={1}
+                      className="h-1"
+                    />
+                    <div className="text-center text-xs text-gray-500">{customTimer.hours}h</div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700">Minutes</label>
+                    <Slider
+                      value={[customTimer.minutes]}
+                      onValueChange={([value]) => onCustomTimerChange(customTimer.hours, value)}
+                      min={0}
+                      max={59}
+                      step={5}
+                      className="h-1"
+                    />
+                    <div className="text-center text-xs text-gray-500">{customTimer.minutes}m</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {cookingMode === 'probe' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Probe Mode</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onRemoveProbe}
+                  className="w-6 h-6 rounded-full p-0"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+              <div className="text-xl font-bold text-center text-green-600">
+                {ingredientTemp}°C / {probeTargetTemp}°C
+              </div>
+              {!isRunning && (
+                <div>
+                  <label className="text-xs font-medium text-gray-700">Target Temperature</label>
+                  <Slider
+                    value={[probeTargetTemp]}
+                    onValueChange={([value]) => onProbeTargetChange(value)}
+                    min={40}
+                    max={100}
+                    step={1}
+                    className="h-1"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>40°C</span>
+                    <span>{probeTargetTemp}°C</span>
+                    <span>100°C</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+
+        {/* Temperature Controls */}
+        <Card className="p-3 rounded-2xl border-2 shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Thermometer className="w-4 h-4 text-orange-500" />
+              <span className="text-sm font-medium text-gray-700">Oven Temperature</span>
+            </div>
+            <span className="text-lg font-bold text-gray-800">{targetTemp}°C</span>
+          </div>
+          
+          {!isRunning && (
+            <div>
+              <Slider
+                value={[targetTemp]}
+                onValueChange={([value]) => onTempAdjust(value - targetTemp)}
+                min={50}
+                max={300}
+                step={5}
+                className="h-1 mb-2"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>50°C</span>
+                <span>300°C</span>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Humidity Controls */}
+        <Card className="p-3 rounded-2xl border-2 shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Droplets className="w-4 h-4 text-cyan-500" />
+              <span className="text-sm font-medium text-gray-700">Humidity</span>
+            </div>
+            <div className="text-sm">
+              <span className="font-bold text-cyan-600">{humidity}%</span>
+              <span className="text-gray-500"> / {targetHumidity}%</span>
+            </div>
+          </div>
+          
+          {!isRunning && (
+            <div>
+              <Slider
+                value={[targetHumidity]}
+                onValueChange={([value]) => onHumidityChange(value)}
+                min={0}
+                max={100}
+                step={5}
+                className="h-1 mb-2"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>0%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Fan Speed Controls */}
+        <Card className="p-3 rounded-2xl border-2 shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Wind className="w-4 h-4 text-blue-500" />
+              <span className="text-sm font-medium text-gray-700">Fan Speed</span>
+            </div>
+            <span className="text-lg font-bold text-blue-600">{fanSpeed}%</span>
+          </div>
+          
+          {!isRunning && (
+            <div>
+              <Slider
+                value={[fanSpeed]}
+                onValueChange={([value]) => onFanSpeedChange(value)}
+                min={0}
+                max={100}
+                step={10}
+                className="h-1 mb-2"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Off</span>
+                <span>Max</span>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Reset Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full rounded-xl border-2 py-3"
+          onClick={() => window.location.reload()}
+        >
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reset All
+        </Button>
       </div>
     </div>
   );

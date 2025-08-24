@@ -1,7 +1,8 @@
-import  { useState } from 'react';
+import React, { useState } from 'react';
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Progress } from "./ui/progress";
 import { 
   ArrowLeft, 
   Clock, 
@@ -54,12 +55,12 @@ export function RecipeDetails({ recipe, onBack, onStartRecipe }: RecipeDetailsPr
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
-      case 'preheat': return <Flame className="w-4 h-4" />;
-      case 'conventional': return <Thermometer className="w-4 h-4" />;
-      case 'convection': return <Wind className="w-4 h-4" />;
-      case 'grill': return <Zap className="w-4 h-4" />;
-      case 'steam': return <Wind className="w-4 h-4" />;
-      default: return <ChefHat className="w-4 h-4" />;
+      case 'preheat': return <Flame className="w-3 h-3" />;
+      case 'conventional': return <Thermometer className="w-3 h-3" />;
+      case 'convection': return <Wind className="w-3 h-3" />;
+      case 'grill': return <Zap className="w-3 h-3" />;
+      case 'steam': return <Wind className="w-3 h-3" />;
+      default: return <ChefHat className="w-3 h-3" />;
     }
   };
 
@@ -84,194 +85,164 @@ export function RecipeDetails({ recipe, onBack, onStartRecipe }: RecipeDetailsPr
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="h-full flex flex-col p-3 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+      
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBack}
+          className="w-10 h-10 rounded-full border-2 p-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <h1 className="text-xl font-medium text-gray-800">Recipe Details</h1>
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-4">
         
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={onBack}
-            className="w-12 h-12 rounded-full border-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-3xl font-medium text-gray-800">Recipe Details</h1>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Recipe Overview */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Hero Card */}
-            <Card className="overflow-hidden rounded-3xl border-2 shadow-lg">
-              <div className="aspect-video relative">
-                <ImageWithFallback
-                  src={`https://images.unsplash.com/800x600/?${recipe.image}`}
-                  alt={recipe.name}
-                  className="w-full h-full object-cover"
-                />
-                {recipe.isFavorite && (
-                  <div className="absolute top-4 right-4 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center">
-                    <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <div className="absolute bottom-6 left-6 text-white">
-                  <h2 className="text-4xl font-bold mb-2">{recipe.name}</h2>
-                  <p className="text-lg opacity-90">{recipe.description}</p>
-                </div>
+        {/* Hero Card */}
+        <Card className="overflow-hidden rounded-2xl border-2 shadow-md">
+          <div className="aspect-video relative">
+            <ImageWithFallback
+              src={`https://images.unsplash.com/800x600/?${recipe.image}`}
+              alt={recipe.name}
+              className="w-full h-full object-cover"
+            />
+            {recipe.isFavorite && (
+              <div className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center">
+                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
               </div>
-              
-              <div className="p-6">
-                <div className="flex items-center gap-6 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-gray-600" />
-                    <span className="font-medium">{recipe.totalTime} min</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-gray-600" />
-                    <span className="font-medium">{recipe.servings} servings</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-full">
-                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                    <span className="font-medium text-yellow-700">{recipe.rating}</span>
-                  </div>
-                  <Badge className={`${getDifficultyColor(recipe.difficulty)} border font-medium`}>
-                    {recipe.difficulty}
-                  </Badge>
-                </div>
-              </div>
-            </Card>
-
-            {/* Cooking Phases */}
-            <Card className="p-6 rounded-3xl border-2 shadow-lg">
-              <h3 className="text-2xl font-medium text-gray-800 mb-6">Cooking Phases</h3>
-              
-              <div className="space-y-4 mb-6">
-                {recipe.phases.map((phase, index) => (
-                  <div
-                    key={phase.id}
-                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                      selectedPhase === index 
-                        ? 'border-blue-300 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setSelectedPhase(index)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-full border-2 flex items-center justify-center font-bold text-gray-700">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-800">{phase.name}</h4>
-                          <p className="text-sm text-gray-600">{phase.description}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge className={`${getModeColor(phase.mode)} border font-medium`}>
-                          {getModeIcon(phase.mode)}
-                          <span className="ml-1 capitalize">{phase.mode}</span>
-                        </Badge>
-                        <div className="text-right">
-                          <div className="font-medium text-gray-800">{phase.temperature}°C</div>
-                          <div className="text-sm text-gray-600">{phase.duration} min</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Phase Details */}
-              {recipe.phases[selectedPhase] && (
-                <Card className="p-4 rounded-2xl bg-blue-50 border-blue-200">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-2xl">{recipe.phases[selectedPhase].icon}</span>
-                    <h4 className="text-lg font-medium text-blue-800">
-                      Phase {selectedPhase + 1}: {recipe.phases[selectedPhase].name}
-                    </h4>
-                  </div>
-                  <p className="text-blue-700 mb-3">{recipe.phases[selectedPhase].description}</p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Thermometer className="w-4 h-4 text-blue-600" />
-                      <span className="text-blue-800">Temperature: {recipe.phases[selectedPhase].temperature}°C</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-600" />
-                      <span className="text-blue-800">Duration: {recipe.phases[selectedPhase].duration} minutes</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getModeIcon(recipe.phases[selectedPhase].mode)}
-                      <span className="text-blue-800 capitalize">Mode: {recipe.phases[selectedPhase].mode}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-blue-800">
-                        Stop when: {recipe.phases[selectedPhase].stopCondition === 'time' ? 'Timer ends' : 'Temperature reached'}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-              )}
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            
-            {/* Start Cooking */}
-            <Card className="p-6 rounded-3xl border-2 shadow-lg">
-              <Button
-                size="lg"
-                onClick={() => onStartRecipe(recipe)}
-                className="w-full h-16 rounded-2xl text-lg gap-3"
-              >
-                <Play className="w-6 h-6" />
-                Start Cooking
-              </Button>
-              
-              <div className="mt-4 p-3 bg-orange-50 rounded-2xl border border-orange-200">
-                <p className="text-sm text-orange-700">
-                  <strong>Total cooking time:</strong> {recipe.totalTime} minutes
-                </p>
-                <p className="text-sm text-orange-700">
-                  <strong>Phases:</strong> {recipe.phases.length} steps
-                </p>
-              </div>
-            </Card>
-
-            {/* Ingredients */}
-            <Card className="p-6 rounded-3xl border-2 shadow-lg">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">Ingredients</h3>
-              <ul className="space-y-2">
-                {recipe.ingredients.map((ingredient, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
-                    <span className="text-gray-700">{ingredient}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-
-            {/* Cooking Tips */}
-            {recipe.tips.length > 0 && (
-              <Card className="p-6 rounded-3xl border-2 shadow-lg">
-                <h3 className="text-xl font-medium text-gray-800 mb-4">💡 Pro Tips</h3>
-                <ul className="space-y-3">
-                  {recipe.tips.map((tip, index) => (
-                    <li key={index} className="p-3 bg-yellow-50 rounded-2xl border border-yellow-200">
-                      <p className="text-sm text-yellow-800">{tip}</p>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
             )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            <div className="absolute bottom-3 left-3 text-white">
+              <h2 className="text-xl font-bold mb-1">{recipe.name}</h2>
+              <p className="text-sm opacity-90">{recipe.description}</p>
+            </div>
           </div>
-        </div>
+          
+          <div className="p-3">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-gray-600" />
+                <span>{recipe.totalTime} min</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Users className="w-3 h-3 text-gray-600" />
+                <span>{recipe.servings} servings</span>
+              </div>
+              <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full">
+                <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                <span className="font-medium text-yellow-700">{recipe.rating}</span>
+              </div>
+              <Badge className={`${getDifficultyColor(recipe.difficulty)} border text-xs px-2 py-1`}>
+                {recipe.difficulty}
+              </Badge>
+            </div>
+          </div>
+        </Card>
+
+        {/* Start Cooking Button */}
+        <Button
+          size="lg"
+          onClick={() => onStartRecipe(recipe)}
+          className="w-full h-12 rounded-xl text-base gap-2"
+        >
+          <Play className="w-5 h-5" />
+          Start Cooking
+        </Button>
+
+        {/* Cooking Phases */}
+        <Card className="p-3 rounded-2xl border-2 shadow-md">
+          <h3 className="text-lg font-medium text-gray-800 mb-3">Cooking Phases</h3>
+          
+          <div className="space-y-2 mb-4">
+            {recipe.phases.map((phase, index) => (
+              <div
+                key={phase.id}
+                className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                  selectedPhase === index 
+                    ? 'border-blue-300 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedPhase(index)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-white rounded-full border flex items-center justify-center font-bold text-xs text-gray-700">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-800 text-sm">{phase.name}</h4>
+                      <p className="text-xs text-gray-600">{phase.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge className={`${getModeColor(phase.mode)} border text-xs px-1.5 py-0.5`}>
+                      {getModeIcon(phase.mode)}
+                      <span className="ml-1 capitalize">{phase.mode}</span>
+                    </Badge>
+                    <div className="text-right">
+                      <div className="text-xs font-medium text-gray-800">{phase.temperature}°C</div>
+                      <div className="text-xs text-gray-600">{phase.duration} min</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Phase Details */}
+          {recipe.phases[selectedPhase] && (
+            <Card className="p-3 rounded-xl bg-blue-50 border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">{recipe.phases[selectedPhase].icon}</span>
+                <h4 className="text-sm font-medium text-blue-800">
+                  Phase {selectedPhase + 1}: {recipe.phases[selectedPhase].name}
+                </h4>
+              </div>
+              <p className="text-xs text-blue-700 mb-2">{recipe.phases[selectedPhase].description}</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <Thermometer className="w-3 h-3 text-blue-600" />
+                  <span className="text-blue-800">{recipe.phases[selectedPhase].temperature}°C</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-blue-600" />
+                  <span className="text-blue-800">{recipe.phases[selectedPhase].duration} min</span>
+                </div>
+              </div>
+            </Card>
+          )}
+        </Card>
+
+        {/* Ingredients */}
+        <Card className="p-3 rounded-2xl border-2 shadow-md">
+          <h3 className="text-lg font-medium text-gray-800 mb-3">Ingredients</h3>
+          <ul className="space-y-1">
+            {recipe.ingredients.map((ingredient, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-1.5 flex-shrink-0"></div>
+                <span className="text-xs text-gray-700">{ingredient}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+
+        {/* Cooking Tips */}
+        {recipe.tips.length > 0 && (
+          <Card className="p-3 rounded-2xl border-2 shadow-md">
+            <h3 className="text-lg font-medium text-gray-800 mb-3">💡 Pro Tips</h3>
+            <ul className="space-y-2">
+              {recipe.tips.map((tip, index) => (
+                <li key={index} className="p-2 bg-yellow-50 rounded-xl border border-yellow-200">
+                  <p className="text-xs text-yellow-800">{tip}</p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
       </div>
     </div>
   );
