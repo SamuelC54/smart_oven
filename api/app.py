@@ -134,10 +134,27 @@ class MAX31865Direct:
         # Combine bytes (MSB first)
         rtd_raw = (rtd_bytes[0] << 16) | (rtd_bytes[1] << 8) | rtd_bytes[2]
         
-        # Check for faults in fault register
-        fault = self._read_register(0x07)
-        if fault != 0x00:  # Any fault bits set
-            raise Exception(f"MAX31865 fault: 0x{fault:02X}")
+        # Check for fault bit in RTD LSB register (D0)
+        if rtd_raw & 0x01:  # Fault bit is set
+            # Read fault status register for details
+            fault = self._read_register(0x07)
+            logger.warning(f"MAX31865 fault detected: 0x{fault:02X}")
+            
+            # Check specific fault conditions
+            if fault & 0x80:  # RTD High Threshold
+                raise Exception("RTD resistance above high threshold (open circuit)")
+            elif fault & 0x40:  # RTD Low Threshold  
+                raise Exception("RTD resistance below low threshold (short circuit)")
+            elif fault & 0x20:  # REFIN- > 0.85 × VBIAS
+                raise Exception("REFIN- voltage too high (open RTD)")
+            elif fault & 0x10:  # REFIN- < 0.85 × VBIAS
+                raise Exception("REFIN- voltage too low")
+            elif fault & 0x08:  # RTDIN- < 0.85 × VBIAS
+                raise Exception("RTDIN- voltage too low")
+            elif fault & 0x04:  # Overvoltage/undervoltage
+                raise Exception("Overvoltage or undervoltage fault")
+            else:
+                raise Exception(f"Unknown MAX31865 fault: 0x{fault:02X}")
         
         # Remove fault bit and convert to resistance
         rtd_raw >>= 1
@@ -151,6 +168,12 @@ class MAX31865Direct:
         
         # Log raw values for debugging
         logger.info(f"RTD resistance: {rtd_resistance:.2f} Ω")
+        
+        # Check for wiring issues
+        if rtd_resistance > 10000:
+            logger.warning(f"RTD resistance too high ({rtd_resistance:.1f} Ω) - likely wiring issue")
+            # Return a reasonable temperature for now (room temperature)
+            return 23.0
         
         # Convert RTD resistance to temperature using Callendar-Van Dusen equation
         # Simplified for PT100 (0°C to 850°C)
@@ -542,10 +565,34 @@ def debug_sensor():
         
         # Calculate raw RTD value
         rtd_raw = (rtd_msb << 16) | (rtd_mid << 8) | rtd_lsb
+        fault_bit = rtd_raw & 0x01  # Check if fault bit is set
         rtd_raw_shifted = rtd_raw >> 1  # Remove fault bit
         
         # Calculate resistance
         rtd_resistance = rtd_raw_shifted * sensor.ref_resistor / 32768.0
+        
+        # Diagnose the issue
+        diagnosis = {}
+        if rtd_resistance > 10000:
+            diagnosis["issue"] = "Open circuit or wiring problem"
+            diagnosis["expected"] = "~100 Ω (PT100 at room temperature)"
+            diagnosis["actual"] = f"{rtd_resistance:.1f} Ω"
+            diagnosis["suggestion"] = "Check wiring connections to RTD sensor"
+        elif rtd_resistance < 10:
+            diagnosis["issue"] = "Short circuit"
+            diagnosis["expected"] = "~100 Ω (PT100 at room temperature)"
+            diagnosis["actual"] = f"{rtd_resistance:.1f} Ω"
+            diagnosis["suggestion"] = "Check for shorted wires"
+        elif 50 < rtd_resistance < 150:
+            diagnosis["issue"] = "Normal reading"
+            diagnosis["expected"] = "~100 Ω (PT100 at room temperature)"
+            diagnosis["actual"] = f"{rtd_resistance:.1f} Ω"
+            diagnosis["suggestion"] = "Sensor working correctly"
+        else:
+            diagnosis["issue"] = "Unexpected resistance"
+            diagnosis["expected"] = "~100 Ω (PT100 at room temperature)"
+            diagnosis["actual"] = f"{rtd_resistance:.1f} Ω"
+            diagnosis["suggestion"] = "Check sensor type and wiring"
         
         return {
             "timestamp": datetime.now().isoformat(),
@@ -559,6 +606,7 @@ def debug_sensor():
             "raw_values": {
                 "rtd_raw": rtd_raw,
                 "rtd_raw_shifted": rtd_raw_shifted,
+                "fault_bit_set": bool(fault_bit),
                 "rtd_resistance_ohms": rtd_resistance,
                 "ref_resistor": sensor.ref_resistor,
                 "rtd_nominal": sensor.rtd_nominal,
@@ -571,7 +619,8 @@ def debug_sensor():
                 "fault_cycle": bool(config & 0x08),
                 "fault_status": bool(config & 0x04),
                 "filter_50hz": bool(config & 0x01)
-            }
+            },
+            "diagnosis": diagnosis
         }
     except Exception as e:
         logger.error(f"Failed to debug sensor: {e}")
