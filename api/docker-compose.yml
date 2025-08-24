@@ -12,9 +12,7 @@ services:
       SENSOR_WIRES: "3" # 2, 3, or 4
       SENSOR_CS: "CE1" # or CE1 (maps to /dev/spidev0.1)
     devices:
+      - /dev/spidev0.0
       - /dev/spidev0.1
+      - /dev/spidev10.0
       - /dev/gpiomem
-    # If you ever use CE0 instead:
-    # devices:
-    #   - /dev/spidev0.0
-    #   - /dev/gpiomem
