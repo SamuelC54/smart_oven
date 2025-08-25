@@ -109,11 +109,51 @@ jobs:
             echo "i2c_enabled=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: Configure display for portrait mode
+        id: configure-display
+        run: |
+          echo "=== Configuring Display for Portrait Mode ==="
+
+          # Check if display rotation is already configured
+          if grep -q "display_rotate=" /boot/config.txt; then
+            echo "Display rotation already configured:"
+            grep "display_rotate=" /boot/config.txt
+            echo "display_already_configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "Configuring display for portrait mode..."
+            # Add display rotation for portrait mode (90 degrees clockwise)
+            echo "display_rotate=1" | sudo tee -a /boot/config.txt
+            echo "Display configured for portrait mode (90° rotation)"
+            echo "display_configured=true" >> $GITHUB_OUTPUT
+          fi
+
+          # Also configure framebuffer rotation for console
+          if grep -q "fbcon=rotate:" /boot/cmdline.txt; then
+            echo "Framebuffer rotation already configured:"
+            grep "fbcon=rotate:" /boot/cmdline.txt
+          else
+            echo "Configuring framebuffer rotation for console..."
+            # Add framebuffer rotation to cmdline.txt
+            sudo sed -i 's/$/ fbcon=rotate:1/' /boot/cmdline.txt
+            echo "Framebuffer rotation configured for portrait mode"
+          fi
+
+          echo "Display configuration summary:"
+          echo "  - display_rotate=1 (90° clockwise rotation)"
+          echo "  - fbcon=rotate:1 (console rotation)"
+          echo "  - This will make the screen display in portrait mode"
+
       - name: Verify configuration changes
         run: |
           echo "=== Configuration Verification ==="
           echo "Current /boot/config.txt SPI and I2C settings:"
           grep -E "(spi|i2c)" /boot/config.txt || echo "No SPI/I2C settings found"
+          echo ""
+          echo "Current /boot/config.txt display settings:"
+          grep -E "(display_rotate)" /boot/config.txt || echo "No display settings found"
+          echo ""
+          echo "Current /boot/cmdline.txt framebuffer settings:"
+          grep -E "(fbcon=rotate)" /boot/cmdline.txt || echo "No framebuffer rotation found"
           echo ""
           echo "Full config.txt (last 20 lines):"
           tail -20 /boot/config.txt
@@ -138,6 +178,7 @@ jobs:
           # Check if any hardware interfaces were enabled
           SPI_ENABLED="${{ steps.enable-spi.outputs.spi_enabled }}"
           I2C_ENABLED="${{ steps.enable-i2c.outputs.i2c_enabled }}"
+          DISPLAY_ENABLED="${{ steps.configure-display.outputs.display_configured }}"
 
           # Check if SPI devices are missing (indicates need for reboot)
           SPI_DEVICES_MISSING=false
@@ -163,6 +204,11 @@ jobs:
           if [ "$I2C_ENABLED" = "true" ]; then
             NEEDS_REBOOT=true
             REBOOT_REASONS+=("I2C was enabled")
+          fi
+
+          if [ "$DISPLAY_ENABLED" = "true" ]; then
+            NEEDS_REBOOT=true
+            REBOOT_REASONS+=("Display rotation was configured")
           fi
 
           if [ "$SPI_DEVICES_MISSING" = "true" ] && grep -q "dtparam=spi=on" /boot/config.txt; then
@@ -200,6 +246,7 @@ jobs:
           echo "  ls -la /dev/spidev*"
           echo "  lsmod | grep spi"
           echo "  docker --version"
+          echo "  # Display should be in portrait mode after reboot"
           echo "=============================================================="
 
   reboot:
