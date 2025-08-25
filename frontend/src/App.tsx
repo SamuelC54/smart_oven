@@ -176,9 +176,6 @@ export default function App() {
           const nextPhase = selectedRecipe.phases[currentPhase + 1];
           if (nextPhase) {
             setTargetTemp(nextPhase.temperature);
-            toast.info(
-              `🔄 Moving to ${nextPhase.name}: ${nextPhase.description}`
-            );
           }
         }
       }
@@ -228,7 +225,6 @@ export default function App() {
       toast.success(`🔥 Oven started in ${modeText} mode!`);
     } else {
       setCookingStartTime(null);
-      toast.info("⏸️ Oven paused.");
     }
   };
 
@@ -270,7 +266,6 @@ export default function App() {
   const handleTempAdjust = (delta: number) => {
     const newTemp = Math.max(50, Math.min(300, targetTemp + delta));
     setTargetTemp(newTemp);
-    toast.info(`🌡️ Target temperature set to ${newTemp}°C`);
   };
 
   const handleTimeAdjust = (minutes: number) => {
@@ -288,12 +283,6 @@ export default function App() {
         .toString()
         .padStart(2, "0")}`
     );
-
-    if (minutes > 0) {
-      toast.info(`⏱️ Added ${minutes} minutes to timer`);
-    } else {
-      toast.info(`⏱️ Removed ${Math.abs(minutes)} minutes from timer`);
-    }
   };
 
   const handleAddTimer = () => {
@@ -302,38 +291,31 @@ export default function App() {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     setTimeRemaining(`${hours}:${minutes.toString().padStart(2, "0")}:00`);
-    toast.success("⏱️ Timer mode activated");
   };
 
   const handleAddProbe = () => {
     setCookingMode("probe");
-    toast.success("🌡️ Probe mode activated");
   };
 
   const handleRemoveTimer = () => {
     setCookingMode(null);
     setTimeRemaining("0:00:00");
-    toast.info("⏱️ Timer mode removed");
   };
 
   const handleRemoveProbe = () => {
     setCookingMode(null);
-    toast.info("🌡️ Probe mode removed");
   };
 
   const handleHumidityChange = (value: number) => {
     setTargetHumidity(value);
-    toast.info(`💧 Target humidity set to ${value}%`);
   };
 
   const handleFanSpeedChange = (value: number) => {
     setFanSpeed(value);
-    toast.info(`🌪️ Fan speed set to ${value}%`);
   };
 
   const handleProbeTargetChange = (value: number) => {
     setProbeTargetTemp(value);
-    toast.info(`🎯 Probe target set to ${value}°C`);
   };
 
   const handleCustomTimerChange = (hours: number, minutes: number) => {
