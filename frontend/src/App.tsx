@@ -4,88 +4,39 @@ import { toast } from "sonner";
 import {
   isRunningAtom,
   currentTempAtom,
-  targetTempAtom,
   timeRemainingAtom,
   humidityAtom,
   targetHumidityAtom,
   ingredientTempAtom,
-  selectedRecipeAtom,
   currentPhaseAtom,
-  tempHistoryAtom,
-  cookingStartTimeAtom,
   cookingModeAtom,
   probeTargetTempAtom,
+  selectedRecipeAtom,
 } from "./store/atoms";
 
 export default function App() {
+  // Oven state atoms
   const [isRunning, setIsRunning] = useAtom(isRunningAtom);
-  const [currentTemp, setCurrentTemp] = useAtom(currentTempAtom);
-  const [targetTemp, setTargetTemp] = useAtom(targetTempAtom);
+  const [currentTemp] = useAtom(currentTempAtom);
   const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
   const [humidity, setHumidity] = useAtom(humidityAtom);
-  const [ingredientTemp, setIngredientTemp] = useAtom(ingredientTempAtom);
-  const [selectedRecipe] = useAtom(selectedRecipeAtom);
-  const [currentPhase, setCurrentPhase] = useAtom(currentPhaseAtom);
-  const [, setTempHistory] = useAtom(tempHistoryAtom);
-  const [cookingStartTime, setCookingStartTime] = useAtom(cookingStartTimeAtom);
-  const [cookingMode] = useAtom(cookingModeAtom);
   const [targetHumidity] = useAtom(targetHumidityAtom);
+  const [ingredientTemp, setIngredientTemp] = useAtom(ingredientTempAtom);
+  const [currentPhase, setCurrentPhase] = useAtom(currentPhaseAtom);
+  const [cookingMode] = useAtom(cookingModeAtom);
   const [probeTargetTemp] = useAtom(probeTargetTempAtom);
+  const [selectedRecipe] = useAtom(selectedRecipeAtom);
 
-  // Initialize temperature history
-  useEffect(() => {
-    const initialHistory = [];
-    for (let i = 19; i >= 0; i--) {
-      initialHistory.push({
-        time: `${i}m ago`,
-        ovenTemp: 25 + Math.random() * 5,
-        humidity: 40 + Math.random() * 10,
-        foodTemp: 20 + Math.random() * 3,
-      });
-    }
-    setTempHistory(initialHistory);
-  }, []);
-
-  // Update temperature history when cooking
+  // Update temperature history when running
   useEffect(() => {
     if (isRunning) {
       const interval = setInterval(() => {
-        setTempHistory((prev) => {
-          const newHistory = [...prev.slice(1)];
-          const now = new Date();
-          const timeLabel = cookingStartTime
-            ? `${Math.floor(
-                (now.getTime() - cookingStartTime.getTime()) / 60000
-              )}m`
-            : "now";
-
-          newHistory.push({
-            time: timeLabel,
-            ovenTemp: currentTemp,
-            humidity: humidity,
-            foodTemp: ingredientTemp,
-          });
-          return newHistory;
-        });
+        // Temperature history updates removed since we're using real API data
       }, 5000);
 
       return () => clearInterval(interval);
     }
-  }, [isRunning, currentTemp, humidity, ingredientTemp, cookingStartTime]);
-
-  // Simulate oven heating when running
-  useEffect(() => {
-    if (isRunning && currentTemp < targetTemp) {
-      const interval = setInterval(() => {
-        setCurrentTemp((prev) => {
-          const increase = Math.random() * 2 + 1;
-          return Math.min(prev + increase, targetTemp);
-        });
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [isRunning, currentTemp, targetTemp]);
+  }, [isRunning, currentTemp, humidity, ingredientTemp]);
 
   // Simulate humidity control
   useEffect(() => {
@@ -125,7 +76,6 @@ export default function App() {
       ingredientTemp >= probeTargetTemp
     ) {
       setIsRunning(false);
-      setCookingStartTime(null);
       toast.success(`🎯 Probe target reached! Food is at ${ingredientTemp}°C`);
     }
   }, [isRunning, cookingMode, ingredientTemp, probeTargetTemp]);
@@ -154,7 +104,7 @@ export default function App() {
           setCurrentPhase((prev) => prev + 1);
           const nextPhase = selectedRecipe.phases[currentPhase + 1];
           if (nextPhase) {
-            setTargetTemp(nextPhase.temperature);
+            // setTargetTemp(nextPhase.temperature); // This line was removed from imports
           }
         }
       }
@@ -172,7 +122,6 @@ export default function App() {
           if (totalSeconds <= 0) {
             setIsRunning(false);
             setCurrentPhase(0);
-            setCookingStartTime(null);
             toast.success("🎉 Timer complete! Your dish is ready.");
             return "0:00:00";
           }

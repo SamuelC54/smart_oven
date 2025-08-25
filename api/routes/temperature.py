@@ -5,7 +5,7 @@ from logger import logger
 
 router = APIRouter()
 
-@router.get("/temp")
+@router.get("/temperature")
 def get_temp():
     logger.info("Temperature reading requested")
     try:

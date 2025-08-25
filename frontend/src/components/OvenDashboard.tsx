@@ -36,14 +36,23 @@ import {
   tempHistoryAtom,
 } from "../store/atoms";
 import { useNavigate } from "@tanstack/react-router";
+import { useTemperature, useSetTemperature } from "../services/temperature";
 
 export function OvenDashboard() {
   const navigate = useNavigate();
 
+  // Real temperature data from API
+  const {
+    data: temperatureData,
+    isLoading: tempLoading,
+    error: tempError,
+  } = useTemperature();
+  const setTempMutation = useSetTemperature();
+
   // Oven state atoms
   const [isRunning, setIsRunning] = useAtom(isRunningAtom);
   const [currentTemp] = useAtom(currentTempAtom);
-  const [targetTemp, setTargetTemp] = useAtom(targetTempAtom);
+  const [targetTemp] = useAtom(targetTempAtom);
   const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
   const [humidity] = useAtom(humidityAtom);
   const [targetHumidity, setTargetHumidity] = useAtom(targetHumidityAtom);
@@ -57,6 +66,10 @@ export function OvenDashboard() {
   const [customTimer, setCustomTimer] = useAtom(customTimerAtom);
   const [tempHistory] = useAtom(tempHistoryAtom);
 
+  // Use real temperature data if available, fallback to atoms
+  const realCurrentTemp = temperatureData?.current ?? currentTemp;
+  const realTargetTemp = temperatureData?.target ?? targetTemp;
+
   // Handler functions
   const handleToggleRunning = () => {
     if (!isRunning && cookingMode === null) {
@@ -67,8 +80,8 @@ export function OvenDashboard() {
   };
 
   const handleTempAdjust = (delta: number) => {
-    const newTemp = Math.max(50, Math.min(300, targetTemp + delta));
-    setTargetTemp(newTemp);
+    const newTemp = Math.max(50, Math.min(300, realTargetTemp + delta));
+    setTempMutation.mutate(newTemp);
   };
 
   const handleAddTimer = () => {
@@ -109,8 +122,8 @@ export function OvenDashboard() {
   };
 
   // Computed values
-  const tempProgress = Math.min((currentTemp / targetTemp) * 100, 100);
-  const isHeating = currentTemp < targetTemp && isRunning;
+  const tempProgress = Math.min((realCurrentTemp / realTargetTemp) * 100, 100);
+  const isHeating = realCurrentTemp < realTargetTemp && isRunning;
   const phaseProgress =
     totalPhases > 0 ? ((currentPhase + 1) / totalPhases) * 100 : 0;
   // const humidityProgress = Math.min((humidity / targetHumidity) * 100, 100);
@@ -282,6 +295,12 @@ export function OvenDashboard() {
 
               {/* Center Content */}
               <div className="text-center z-10">
+                {tempError && (
+                  <div className="text-xs text-red-600 mb-1">Temp Error</div>
+                )}
+                {tempLoading && (
+                  <div className="text-xs text-gray-500 mb-1">Loading...</div>
+                )}
                 {cookingMode === "probe" ? (
                   <>
                     <div className="text-3xl font-bold text-gray-800 mb-1">
@@ -295,11 +314,11 @@ export function OvenDashboard() {
                 ) : (
                   <>
                     <div className="text-3xl font-bold text-gray-800 mb-1">
-                      {currentTemp}°
+                      {realCurrentTemp}°
                     </div>
                     <div className="text-xs text-gray-500 mb-1">Current</div>
                     <div className="text-xs text-gray-400 mb-1">
-                      Target: {targetTemp}°
+                      Target: {realTargetTemp}°
                     </div>
                   </>
                 )}
@@ -311,7 +330,7 @@ export function OvenDashboard() {
                         : "bg-orange-100 text-orange-600"
                       : isHeating
                         ? "bg-orange-100 text-orange-600"
-                        : currentTemp >= targetTemp
+                        : realCurrentTemp >= realTargetTemp
                           ? "bg-green-100 text-green-600"
                           : "bg-gray-100 text-gray-600"
                   }`}
@@ -322,7 +341,7 @@ export function OvenDashboard() {
                       : "Cooking"
                     : isHeating
                       ? "Heating..."
-                      : currentTemp >= targetTemp
+                      : realCurrentTemp >= realTargetTemp
                         ? "Ready"
                         : "Standby"}
                 </div>
@@ -491,26 +510,32 @@ export function OvenDashboard() {
               </span>
             </div>
             <span className="text-lg font-bold text-gray-800">
-              {targetTemp}°C
+              {realTargetTemp}°C
             </span>
           </div>
 
           {!isRunning && (
             <div>
               <Slider
-                value={[targetTemp]}
+                value={[realTargetTemp]}
                 onValueChange={([value]) =>
-                  handleTempAdjust(value - targetTemp)
+                  handleTempAdjust(value - realTargetTemp)
                 }
                 min={50}
                 max={300}
                 step={5}
                 className="h-1 mb-2"
+                disabled={setTempMutation.isPending}
               />
               <div className="flex justify-between text-xs text-gray-500">
                 <span>50°C</span>
                 <span>300°C</span>
               </div>
+              {setTempMutation.isPending && (
+                <div className="text-xs text-gray-500 text-center mt-1">
+                  Updating...
+                </div>
+              )}
             </div>
           )}
         </Card>
