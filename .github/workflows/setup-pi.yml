@@ -109,10 +109,10 @@ jobs:
             echo "i2c_enabled=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Configure display for portrait mode (DSI)
+      - name: Configure display for portrait mode (Wayland/Wayfire)
         id: configure-display
         run: |
-          echo "=== Configuring DSI Display for Portrait Mode ==="
+          echo "=== Configuring Wayland/Wayfire Display for Portrait Mode ==="
 
           # For Raspberry Pi 5 with DSI, we need to use different configuration
           # Check if display rotation is already configured
@@ -156,77 +156,78 @@ jobs:
             echo "Framebuffer rotation configured for portrait mode"
           fi
 
-          # Alternative: Try using X11 rotation if available
-          if [ -d "/etc/X11" ]; then
-            echo "Configuring X11 rotation for desktop environment..."
-            # Create or update X11 configuration for rotation
-            sudo mkdir -p /etc/X11/xorg.conf.d
-            echo 'Section "Device"' | sudo tee /etc/X11/xorg.conf.d/99-rotation.conf
-            echo '    Identifier "Raspberry Pi"' | sudo tee -a /etc/X11/xorg.conf.d/99-rotation.conf
-            echo '    Driver "modesetting"' | sudo tee -a /etc/X11/xorg.conf.d/99-rotation.conf
-            echo '    Option "Rotate" "right"' | sudo tee -a /etc/X11/xorg.conf.d/99-rotation.conf
-            echo 'EndSection' | sudo tee -a /etc/X11/xorg.conf.d/99-rotation.conf
-            echo "X11 rotation configured for right (90°) rotation"
+          # Configure Wayfire display rotation (Wayland)
+          echo "Configuring Wayfire display rotation..."
+          WAYFIRE_CONFIG="$HOME/.config/wayfire.ini"
+
+          # Create wayfire config directory if it doesn't exist
+          sudo mkdir -p "$(dirname "$WAYFIRE_CONFIG")"
+
+          # Check if wayfire config already has output section
+          if [ -f "$WAYFIRE_CONFIG" ] && grep -q "\[output:DSI-1\]" "$WAYFIRE_CONFIG"; then
+            echo "Wayfire config already has DSI-1 output section, updating transform..."
+            # Update existing transform
+            sudo sed -i '/\[output:DSI-1\]/,/^\[/ s/^transform = .*/transform = 90/' "$WAYFIRE_CONFIG"
+          else
+            echo "Adding DSI-1 output section to wayfire config..."
+            # Add new output section
+            echo "" | sudo tee -a "$WAYFIRE_CONFIG"
+            echo "[output:DSI-1]" | sudo tee -a "$WAYFIRE_CONFIG"
+            echo "transform = 90" | sudo tee -a "$WAYFIRE_CONFIG"
           fi
 
-          echo "DSI Display configuration summary:"
+          echo "Wayland/Wayfire Display configuration summary:"
           echo "  - display_rotate=1 (90° clockwise rotation)"
           echo "  - dtoverlay=vc4-kms-v3d (KMS driver for DSI)"
-          echo "  - fbcon=rotate:1 (console rotation)"
-          echo "  - X11 rotation configured (if desktop environment)"
+          echo "  - fbcon=rotate=1 (console rotation)"
+          echo "  - Wayfire transform=90 (Wayland display rotation)"
           echo "  - This will make the DSI screen display in portrait mode"
 
-      - name: Configure touchscreen input for portrait mode
+      - name: Configure touchscreen input for portrait mode (Wayland)
         id: configure-touchscreen
         run: |
-          echo "=== Configuring Touchscreen Input for Portrait Mode ==="
+          echo "=== Configuring Touchscreen Input for Portrait Mode (Wayland) ==="
 
-          # Create autostart script for touchscreen transformation
-          AUTOSTART_DIR="/etc/xdg/autostart"
-          SCRIPT_NAME="touchscreen-rotation.desktop"
+          # Create udev hwdb configuration for persistent touchscreen rotation
+          HWDB_FILE="/etc/udev/hwdb.d/99-touchscreen-rotation.hwdb"
 
-          echo "Creating touchscreen rotation autostart script..."
-          sudo mkdir -p "$AUTOSTART_DIR"
+          echo "Creating udev hwdb configuration for touchscreen rotation..."
+          sudo mkdir -p "$(dirname "$HWDB_FILE")"
 
-          # Create the autostart desktop file
-          echo '[Desktop Entry]' | sudo tee "$AUTOSTART_DIR/$SCRIPT_NAME"
-          echo 'Type=Application' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
-          echo 'Name=Touchscreen Rotation' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
-          echo 'Exec=/usr/local/bin/touchscreen-rotation.sh' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
-          echo 'Terminal=false' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
-          echo 'X-GNOME-Autostart-enabled=true' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
+          # Create the hwdb file with common touchscreen names
+          echo "# Touchscreen rotation for portrait mode (90° clockwise)" | sudo tee "$HWDB_FILE"
+          echo "# Common Raspberry Pi touchscreen names - adjust if needed" | sudo tee -a "$HWDB_FILE"
+          echo "" | sudo tee -a "$HWDB_FILE"
+          echo "# FT5406 touchscreen (common on Pi displays)" | sudo tee -a "$HWDB_FILE"
+          echo "evdev:name:FT5406*" | sudo tee -a "$HWDB_FILE"
+          echo " LIBINPUT_CALIBRATION_MATRIX=0 1 0 -1 0 1 0 0 1" | sudo tee -a "$HWDB_FILE"
+          echo "" | sudo tee -a "$HWDB_FILE"
+          echo "# Alternative touchscreen names (uncomment and adjust as needed)" | sudo tee -a "$HWDB_FILE"
+          echo "# evdev:name:ADS7846*" | sudo tee -a "$HWDB_FILE"
+          echo "#  LIBINPUT_CALIBRATION_MATRIX=0 1 0 -1 0 1 0 0 1" | sudo tee -a "$HWDB_FILE"
+          echo "" | sudo tee -a "$HWDB_FILE"
+          echo "# evdev:name:Goodix*" | sudo tee -a "$HWDB_FILE"
+          echo "#  LIBINPUT_CALIBRATION_MATRIX=0 1 0 -1 0 1 0 0 1" | sudo tee -a "$HWDB_FILE"
+          echo "" | sudo tee -a "$HWDB_FILE"
+          echo "# evdev:name:FT5*" | sudo tee -a "$HWDB_FILE"
+          echo "#  LIBINPUT_CALIBRATION_MATRIX=0 1 0 -1 0 1 0 0 1" | sudo tee -a "$HWDB_FILE"
 
-          # Create the actual rotation script
-          ROTATION_SCRIPT="/usr/local/bin/touchscreen-rotation.sh"
-          echo '#!/bin/bash' | sudo tee "$ROTATION_SCRIPT"
-          echo '' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '# Wait for X server to be ready' | sudo tee -a "$ROTATION_SCRIPT"
-          echo 'sleep 5' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '# Find touchscreen device' | sudo tee -a "$ROTATION_SCRIPT"
-          echo 'TOUCH_DEVICE=$(xinput list | grep -i "touch" | grep -o "id=[0-9]*" | head -1 | cut -d= -f2)' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '' | sudo tee -a "$ROTATION_SCRIPT"
-          echo 'if [ -n "$TOUCH_DEVICE" ]; then' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '    echo "Found touchscreen device ID: $TOUCH_DEVICE"' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '    ' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '    # Apply 90° rotation transformation matrix' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '    # Matrix: [0 1 0 -1 0 1 0 0 1] for 90° clockwise rotation' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '    xinput set-prop "$TOUCH_DEVICE" '\''Coordinate Transformation Matrix'\'' 0 1 0 -1 0 1 0 0 1' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '    ' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '    echo "Touchscreen rotation applied for device ID: $TOUCH_DEVICE"' | sudo tee -a "$ROTATION_SCRIPT"
-          echo 'else' | sudo tee -a "$ROTATION_SCRIPT"
-          echo '    echo "No touchscreen device found"' | sudo tee -a "$ROTATION_SCRIPT"
-          echo 'fi' | sudo tee -a "$ROTATION_SCRIPT"
+          # Update hwdb and trigger udev
+          echo "Updating hardware database..."
+          sudo systemd-hwdb update
 
-          # Make the script executable
-          sudo chmod +x "$ROTATION_SCRIPT"
+          echo "Triggering udev for input devices..."
+          sudo udevadm trigger /dev/input/event*
 
           echo "Touchscreen configuration summary:"
-          echo "  - Autostart script created: $AUTOSTART_DIR/$SCRIPT_NAME"
-          echo "  - Rotation script created: $ROTATION_SCRIPT"
+          echo "  - udev hwdb file created: $HWDB_FILE"
           echo "  - Transformation matrix: [0 1 0 -1 0 1 0 0 1] (90° clockwise)"
-          echo "  - Script will auto-detect touchscreen device and apply rotation"
+          echo "  - Configuration is persistent and survives reboots"
+          echo "  - No scripts needed - uses native udev system"
           echo "  - Touch input will be aligned with portrait display orientation"
+          echo ""
+          echo "Note: If touchscreen name differs, check with: libinput list-devices"
+          echo "Then update the hwdb file with the correct device name"
           echo "touchscreen_configured=true" >> $GITHUB_OUTPUT
 
       - name: Verify configuration changes
@@ -340,8 +341,9 @@ jobs:
           echo "  docker --version"
           echo "  # Display should be in portrait mode after reboot"
           echo "  # Touchscreen should be aligned with portrait orientation"
-          echo "  # Test touchscreen: xinput list (to see device ID)"
-          echo "  # Manual touchscreen rotation: xinput set-prop <ID> 'Coordinate Transformation Matrix' 0 1 0 -1 0 1 0 0 1"
+          echo "  # Test touchscreen: libinput list-devices (to see device name)"
+          echo "  # Check Wayfire config: cat ~/.config/wayfire.ini"
+          echo "  # Check hwdb config: cat /etc/udev/hwdb.d/99-touchscreen-rotation.hwdb"
           echo "=============================================================="
 
   reboot:
