@@ -34,11 +34,11 @@ jobs:
           chmod +x deploy/setup-scripts/enable-i2c.sh
           ./deploy/setup-scripts/enable-i2c.sh
 
-      - name: Configure display for portrait mode (180° method - Freenove recommended)
+      - name: Configure display for portrait mode (Headless Raspberry Pi 5)
         id: configure-display
         run: |
-          chmod +x deploy/setup-scripts/configure-display-180.sh
-          ./deploy/setup-scripts/configure-display-180.sh
+          chmod +x deploy/setup-scripts/configure-display-headless-pi5.sh
+          ./deploy/setup-scripts/configure-display-headless-pi5.sh 90
 
       - name: Configure touchscreen input for portrait mode (Freenove)
         id: configure-touchscreen
