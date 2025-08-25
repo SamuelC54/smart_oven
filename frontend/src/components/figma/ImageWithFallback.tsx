@@ -1,4 +1,5 @@
-import React, { useAtom } from "react";
+import React from "react";
+import { useAtom } from "jotai";
 import { imageDidErrorAtom } from "../../store/atoms";
 
 const ERROR_IMG_SRC =

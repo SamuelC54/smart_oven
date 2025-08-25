@@ -9,7 +9,6 @@ import {
   type EnhancedRecipe,
   recipeSearchTermAtom,
   recipeSelectedCategoryAtom,
-  currentViewAtom,
   selectedRecipeAtom,
   viewingRecipeAtom,
   currentPhaseAtom,
@@ -17,6 +16,7 @@ import {
   timeRemainingAtom,
   cookingModeAtom,
 } from "../store/atoms";
+import { useNavigate } from "@tanstack/react-router";
 
 const sampleRecipes: EnhancedRecipe[] = [
   {
@@ -233,8 +233,7 @@ const categories = [
 ];
 
 export function RecipeSelector() {
-  // Navigation atoms
-  const [, setCurrentView] = useAtom(currentViewAtom);
+  const navigate = useNavigate();
   const [, setSelectedRecipe] = useAtom(selectedRecipeAtom);
   const [, setViewingRecipe] = useAtom(viewingRecipeAtom);
   const [, setCurrentPhase] = useAtom(currentPhaseAtom);
@@ -264,12 +263,12 @@ export function RecipeSelector() {
     // Auto-select timer mode for recipes
     setCookingMode("timer");
 
-    setCurrentView("dashboard");
+    navigate({ to: "/" });
   };
 
   const handleViewRecipe = (recipe: EnhancedRecipe) => {
     setViewingRecipe(recipe);
-    setCurrentView("recipe-details");
+    navigate({ to: "/recipe-details" });
   };
 
   const filteredRecipes = sampleRecipes.filter((recipe) => {
@@ -303,7 +302,7 @@ export function RecipeSelector() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setCurrentView("dashboard")}
+          onClick={() => navigate({ to: "/" })}
           className="w-10 h-10 rounded-full border-2 p-0"
         >
           <ArrowLeft className="w-4 h-4" />

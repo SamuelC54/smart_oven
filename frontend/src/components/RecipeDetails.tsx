@@ -16,20 +16,17 @@ import {
   Zap,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { type EnhancedRecipe, selectedPhaseAtom } from "../store/atoms";
+import { selectedPhaseAtom, viewingRecipeAtom } from "../store/atoms";
 
-interface RecipeDetailsProps {
-  recipe: EnhancedRecipe;
-  onBack: () => void;
-  onStartRecipe: (recipe: EnhancedRecipe) => void;
-}
-
-export function RecipeDetails({
-  recipe,
-  onBack,
-  onStartRecipe,
-}: RecipeDetailsProps) {
+export function RecipeDetails() {
   const [selectedPhase, setSelectedPhase] = useAtom(selectedPhaseAtom);
+  const [viewingRecipe] = useAtom(viewingRecipeAtom);
+
+  if (!viewingRecipe) {
+    return <div>Recipe not found</div>;
+  }
+
+  const recipe = viewingRecipe;
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -85,7 +82,7 @@ export function RecipeDetails({
         <Button
           variant="outline"
           size="sm"
-          onClick={onBack}
+          onClick={() => window.history.back()}
           className="w-10 h-10 rounded-full border-2 p-0"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -144,7 +141,7 @@ export function RecipeDetails({
         {/* Start Cooking Button */}
         <Button
           size="lg"
-          onClick={() => onStartRecipe(recipe)}
+          onClick={() => window.history.back()}
           className="w-full h-12 rounded-xl text-base gap-2"
         >
           <Play className="w-5 h-5" />

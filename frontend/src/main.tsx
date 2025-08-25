@@ -1,13 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/globals.css";
-import App from "./App.tsx";
-import { Provider } from "./store/Provider.tsx";
+import { RouterProvider } from "@tanstack/react-router";
+import { router } from "./router";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Provider>
-      <App />
-    </Provider>
+    <RouterProvider router={router} />
   </StrictMode>
 );

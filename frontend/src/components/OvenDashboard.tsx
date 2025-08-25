@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import {
-  currentViewAtom,
   isRunningAtom,
   currentTempAtom,
   targetTempAtom,
@@ -36,10 +35,10 @@ import {
   customTimerAtom,
   tempHistoryAtom,
 } from "../store/atoms";
+import { useNavigate } from "@tanstack/react-router";
 
 export function OvenDashboard() {
-  // Navigation atoms
-  const [, setCurrentView] = useAtom(currentViewAtom);
+  const navigate = useNavigate();
 
   // Oven state atoms
   const [isRunning, setIsRunning] = useAtom(isRunningAtom);
@@ -135,7 +134,7 @@ export function OvenDashboard() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentView("recipes")}
+            onClick={() => navigate({ to: "/recipes" })}
             className="rounded-xl px-3 border-2"
           >
             <BookOpen className="w-4 h-4" />
@@ -143,7 +142,7 @@ export function OvenDashboard() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentView("settings")}
+            onClick={() => navigate({ to: "/settings" })}
             className="rounded-xl px-3 border-2"
           >
             <Settings className="w-4 h-4" />

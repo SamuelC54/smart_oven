@@ -58,9 +58,6 @@ export interface OvenSettings {
   [key: string]: unknown;
 }
 
-// Navigation state
-export const currentViewAtom = atom<View>("dashboard");
-
 // Oven state
 export const isRunningAtom = atom(false);
 export const currentTempAtom = atom(25);

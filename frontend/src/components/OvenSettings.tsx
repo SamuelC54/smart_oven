@@ -21,15 +21,11 @@ import {
   Zap,
   Wind,
 } from "lucide-react";
-import {
-  ovenSettingsAtom,
-  type OvenSettings,
-  currentViewAtom,
-} from "../store/atoms";
+import { ovenSettingsAtom, type OvenSettings } from "../store/atoms";
+import { useNavigate } from "@tanstack/react-router";
 
 export function OvenSettings() {
-  // Navigation atoms
-  const [, setCurrentView] = useAtom(currentViewAtom);
+  const navigate = useNavigate();
   const [settings, setSettings] = useAtom(ovenSettingsAtom);
 
   const handleSettingChange = (key: string, value: unknown) => {
@@ -71,7 +67,7 @@ export function OvenSettings() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentView("dashboard")}
+            onClick={() => navigate({ to: "/" })}
             className="w-10 h-10 rounded-full border-2 p-0"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -91,7 +87,7 @@ export function OvenSettings() {
           </Button>
           <Button
             size="sm"
-            onClick={() => setCurrentView("dashboard")}
+            onClick={() => navigate({ to: "/" })}
             className="rounded-xl px-3 text-xs"
           >
             <Save className="w-3 h-3 mr-1" />
