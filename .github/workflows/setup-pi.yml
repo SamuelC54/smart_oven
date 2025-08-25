@@ -109,22 +109,29 @@ jobs:
             echo "i2c_enabled=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Configure display for portrait mode
+      - name: Configure display for portrait mode (DSI)
         id: configure-display
         run: |
-          echo "=== Configuring Display for Portrait Mode ==="
+          echo "=== Configuring DSI Display for Portrait Mode ==="
 
+          # For Raspberry Pi 5 with DSI, we need to use different configuration
           # Check if display rotation is already configured
           if grep -q "display_rotate=" /boot/config.txt; then
             echo "Display rotation already configured:"
             grep "display_rotate=" /boot/config.txt
             echo "display_already_configured=true" >> $GITHUB_OUTPUT
           else
-            echo "Configuring display for portrait mode..."
-            # Add display rotation for portrait mode (90 degrees clockwise)
+            echo "Configuring DSI display for portrait mode..."
+            # For DSI displays, we use display_rotate=1 for 90° clockwise
             echo "display_rotate=1" | sudo tee -a /boot/config.txt
-            echo "Display configured for portrait mode (90° rotation)"
+            echo "DSI display configured for portrait mode (90° rotation)"
             echo "display_configured=true" >> $GITHUB_OUTPUT
+          fi
+
+          # Configure DSI-specific settings for better compatibility
+          if ! grep -q "dtoverlay=vc4-kms-v3d" /boot/config.txt; then
+            echo "Enabling KMS driver for DSI display..."
+            echo "dtoverlay=vc4-kms-v3d" | sudo tee -a /boot/config.txt
           fi
 
           # Also configure framebuffer rotation for console
@@ -138,10 +145,25 @@ jobs:
             echo "Framebuffer rotation configured for portrait mode"
           fi
 
-          echo "Display configuration summary:"
+          # Alternative: Try using X11 rotation if available
+          if [ -d "/etc/X11" ]; then
+            echo "Configuring X11 rotation for desktop environment..."
+            # Create or update X11 configuration for rotation
+            sudo mkdir -p /etc/X11/xorg.conf.d
+            echo 'Section "Device"' | sudo tee /etc/X11/xorg.conf.d/99-rotation.conf
+            echo '    Identifier "Raspberry Pi"' | sudo tee -a /etc/X11/xorg.conf.d/99-rotation.conf
+            echo '    Driver "modesetting"' | sudo tee -a /etc/X11/xorg.conf.d/99-rotation.conf
+            echo '    Option "Rotate" "right"' | sudo tee -a /etc/X11/xorg.conf.d/99-rotation.conf
+            echo 'EndSection' | sudo tee -a /etc/X11/xorg.conf.d/99-rotation.conf
+            echo "X11 rotation configured for right (90°) rotation"
+          fi
+
+          echo "DSI Display configuration summary:"
           echo "  - display_rotate=1 (90° clockwise rotation)"
+          echo "  - dtoverlay=vc4-kms-v3d (KMS driver for DSI)"
           echo "  - fbcon=rotate:1 (console rotation)"
-          echo "  - This will make the screen display in portrait mode"
+          echo "  - X11 rotation configured (if desktop environment)"
+          echo "  - This will make the DSI screen display in portrait mode"
 
       - name: Verify configuration changes
         run: |
@@ -150,7 +172,7 @@ jobs:
           grep -E "(spi|i2c)" /boot/config.txt || echo "No SPI/I2C settings found"
           echo ""
           echo "Current /boot/config.txt display settings:"
-          grep -E "(display_rotate)" /boot/config.txt || echo "No display settings found"
+          grep -E "(display_rotate|vc4-kms-v3d)" /boot/config.txt || echo "No display settings found"
           echo ""
           echo "Current /boot/cmdline.txt framebuffer settings:"
           grep -E "(fbcon=rotate)" /boot/cmdline.txt || echo "No framebuffer rotation found"
