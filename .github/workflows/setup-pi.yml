@@ -122,8 +122,19 @@ jobs:
             echo "display_already_configured=true" >> $GITHUB_OUTPUT
           else
             echo "Configuring DSI display for portrait mode..."
-            # For DSI displays, we use display_rotate=1 for 90° clockwise
+            # Try multiple rotation methods for better compatibility
+            
+            # Method 1: Standard display_rotate
             echo "display_rotate=1" | sudo tee -a /boot/config.txt
+            
+            # Method 2: Alternative rotation values to try
+            echo "# Alternative rotation methods (uncomment if needed):" | sudo tee -a /boot/config.txt
+            echo "# display_rotate=2  # 180 degrees" | sudo tee -a /boot/config.txt
+            echo "# display_rotate=3  # 270 degrees (90° counter-clockwise)" | sudo tee -a /boot/config.txt
+            
+            # Method 3: Try using lcd_rotate instead
+            echo "lcd_rotate=1" | sudo tee -a /boot/config.txt
+            
             echo "DSI display configured for portrait mode (90° rotation)"
             echo "display_configured=true" >> $GITHUB_OUTPUT
           fi
