@@ -2,8 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiCall } from "./api";
 
 export interface TemperatureResponse {
-  current: number;
-  target: number;
+  temperature: number;
+  unit: string;
 }
 
 export interface SetTemperatureRequest {
@@ -27,7 +27,7 @@ export const useTemperature = () => {
   return useQuery({
     queryKey: ["temperature"],
     queryFn: getTemperature,
-    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    refetchInterval: 1000, // Refetch every 1000ms for real-time updates
   });
 };
 

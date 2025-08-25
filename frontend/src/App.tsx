@@ -3,7 +3,6 @@ import { useAtom } from "jotai";
 import { toast } from "sonner";
 import {
   isRunningAtom,
-  currentTempAtom,
   timeRemainingAtom,
   humidityAtom,
   targetHumidityAtom,
@@ -12,12 +11,12 @@ import {
   cookingModeAtom,
   probeTargetTempAtom,
   selectedRecipeAtom,
+  targetTempAtom,
 } from "./store/atoms";
 
 export default function App() {
   // Oven state atoms
   const [isRunning, setIsRunning] = useAtom(isRunningAtom);
-  const [currentTemp] = useAtom(currentTempAtom);
   const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
   const [humidity, setHumidity] = useAtom(humidityAtom);
   const [targetHumidity] = useAtom(targetHumidityAtom);
@@ -26,6 +25,7 @@ export default function App() {
   const [cookingMode] = useAtom(cookingModeAtom);
   const [probeTargetTemp] = useAtom(probeTargetTempAtom);
   const [selectedRecipe] = useAtom(selectedRecipeAtom);
+  const [, setTargetTemp] = useAtom(targetTempAtom);
 
   // Update temperature history when running
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function App() {
 
       return () => clearInterval(interval);
     }
-  }, [isRunning, currentTemp, humidity, ingredientTemp]);
+  }, [isRunning, humidity, ingredientTemp]);
 
   // Simulate humidity control
   useEffect(() => {
@@ -60,13 +60,13 @@ export default function App() {
       const interval = setInterval(() => {
         setIngredientTemp((prev) => {
           const increase = Math.random() * 2 + 0.5;
-          return Math.round(Math.min(prev + increase, currentTemp - 10));
+          return Math.round(Math.min(prev + increase, 100)); // Using fixed max temp since we now get real temp from API
         });
       }, 3000);
 
       return () => clearInterval(interval);
     }
-  }, [isRunning, currentTemp]);
+  }, [isRunning]);
 
   // Check probe completion
   useEffect(() => {
@@ -104,7 +104,7 @@ export default function App() {
           setCurrentPhase((prev) => prev + 1);
           const nextPhase = selectedRecipe.phases[currentPhase + 1];
           if (nextPhase) {
-            // setTargetTemp(nextPhase.temperature); // This line was removed from imports
+            setTargetTemp(nextPhase.temperature);
           }
         }
       }

@@ -20,7 +20,6 @@ import {
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import {
   isRunningAtom,
-  currentTempAtom,
   targetTempAtom,
   timeRemainingAtom,
   humidityAtom,
@@ -47,11 +46,11 @@ export function OvenDashboard() {
     isLoading: tempLoading,
     error: tempError,
   } = useTemperature();
+
   const setTempMutation = useSetTemperature();
 
   // Oven state atoms
   const [isRunning, setIsRunning] = useAtom(isRunningAtom);
-  const [currentTemp] = useAtom(currentTempAtom);
   const [targetTemp] = useAtom(targetTempAtom);
   const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
   const [humidity] = useAtom(humidityAtom);
@@ -67,8 +66,12 @@ export function OvenDashboard() {
   const [tempHistory] = useAtom(tempHistoryAtom);
 
   // Use real temperature data if available, fallback to atoms
-  const realCurrentTemp = temperatureData?.current ?? currentTemp;
-  const realTargetTemp = temperatureData?.target ?? targetTemp;
+  const realCurrentTemp = temperatureData?.temperature ?? 0;
+  const realTargetTemp = targetTemp; // Keep using the atom for target temp since API only provides current
+
+  // Format temperatures to 1 decimal place
+  const formattedCurrentTemp = realCurrentTemp.toFixed(1);
+  const formattedTargetTemp = realTargetTemp.toFixed(1);
 
   // Handler functions
   const handleToggleRunning = () => {
@@ -314,11 +317,11 @@ export function OvenDashboard() {
                 ) : (
                   <>
                     <div className="text-3xl font-bold text-gray-800 mb-1">
-                      {realCurrentTemp}°
+                      {formattedCurrentTemp}°
                     </div>
                     <div className="text-xs text-gray-500 mb-1">Current</div>
                     <div className="text-xs text-gray-400 mb-1">
-                      Target: {realTargetTemp}°
+                      Target: {formattedTargetTemp}°
                     </div>
                   </>
                 )}
@@ -510,7 +513,7 @@ export function OvenDashboard() {
               </span>
             </div>
             <span className="text-lg font-bold text-gray-800">
-              {realTargetTemp}°C
+              {formattedTargetTemp}°C
             </span>
           </div>
 

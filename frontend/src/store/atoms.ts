@@ -60,7 +60,6 @@ export interface OvenSettings {
 
 // Oven state
 export const isRunningAtom = atom(false);
-export const currentTempAtom = atom(25);
 export const targetTempAtom = atom(180);
 export const timeRemainingAtom = atom("1:30:00");
 export const humidityAtom = atom(45);
