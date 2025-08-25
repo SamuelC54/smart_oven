@@ -30,17 +30,17 @@ jobs:
           chmod +x deploy/setup-scripts/enable-i2c.sh
           ./deploy/setup-scripts/enable-i2c.sh
 
-      - name: Configure display for portrait mode (Wayland/Wayfire)
+      - name: Configure display for portrait mode (cmdline.txt)
         id: configure-display
         run: |
-          chmod +x deploy/setup-scripts/configure-display.sh
-          ./deploy/setup-scripts/configure-display.sh
+          chmod +x deploy/setup-scripts/configure-display-cmdline.sh
+          ./deploy/setup-scripts/configure-display-cmdline.sh
 
-      - name: Configure touchscreen input for portrait mode (Wayland)
+      - name: Configure touchscreen input for portrait mode (Device Tree)
         id: configure-touchscreen
         run: |
-          chmod +x deploy/setup-scripts/configure-touchscreen.sh
-          ./deploy/setup-scripts/configure-touchscreen.sh
+          chmod +x deploy/setup-scripts/configure-touchscreen-dt.sh
+          ./deploy/setup-scripts/configure-touchscreen-dt.sh
 
       - name: Verify configuration changes
         run: |
