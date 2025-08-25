@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useAtom } from "jotai";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -6,6 +6,10 @@ import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Search, Clock, Users, Star, ChefHat } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import {
+  recipeSearchTermAtom,
+  recipeSelectedCategoryAtom,
+} from "../store/atoms";
 
 interface Recipe {
   id: string;
@@ -111,8 +115,10 @@ export function RecipeSelector({
   onSelectRecipe,
   onBack,
 }: RecipeSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useAtom(recipeSearchTermAtom);
+  const [selectedCategory, setSelectedCategory] = useAtom(
+    recipeSelectedCategoryAtom
+  );
 
   const categories = [
     { id: "all", name: "All Recipes", icon: ChefHat },

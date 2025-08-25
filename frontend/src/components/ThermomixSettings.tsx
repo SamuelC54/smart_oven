@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useAtom } from "jotai";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
@@ -21,6 +21,7 @@ import {
   Zap,
   Wind,
 } from "lucide-react";
+import { thermomixSettingsAtom, type ThermomixSettings } from "../store/atoms";
 
 interface ThermomixSettingsProps {
   onBack: () => void;
@@ -28,22 +29,10 @@ interface ThermomixSettingsProps {
 }
 
 export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
-  const [settings, setSettings] = useState({
-    temperatureUnit: "celsius",
-    preheating: true,
-    alertSound: true,
-    alertVolume: 75,
-    cookingMode: "conventional",
-    fanSpeed: 50,
-    childLock: false,
-    autoShutoff: true,
-    ovenLight: true,
-    brightness: 80,
-    nightMode: false,
-  });
+  const [settings, setSettings] = useAtom(thermomixSettingsAtom);
 
   const handleSettingChange = (key: string, value: unknown) => {
-    setSettings((prev) => ({
+    setSettings((prev: ThermomixSettings) => ({
       ...prev,
       [key]: value,
     }));

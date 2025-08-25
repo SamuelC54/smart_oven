@@ -1,37 +1,15 @@
-import { useState } from "react";
+import { useAtom } from "jotai";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Search, Clock, Users, Star, ArrowLeft, Eye } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-
-interface RecipePhase {
-  id: string;
-  name: string;
-  description: string;
-  temperature: number;
-  duration: number; // minutes
-  mode: "preheat" | "conventional" | "convection" | "grill" | "steam";
-  stopCondition: "time" | "temperature";
-  icon: string;
-}
-
-interface EnhancedRecipe {
-  id: string;
-  name: string;
-  category: string;
-  servings: number;
-  difficulty: "Easy" | "Medium" | "Hard";
-  rating: number;
-  image: string;
-  description: string;
-  ingredients: string[];
-  phases: RecipePhase[];
-  totalTime: number;
-  isFavorite: boolean;
-  tips: string[];
-}
+import {
+  type EnhancedRecipe,
+  thermomixSearchTermAtom,
+  thermomixSelectedCategoryAtom,
+} from "../store/atoms";
 
 interface ThermomixRecipeSelectorProps {
   onSelectRecipe: (recipe: EnhancedRecipe) => void;
@@ -258,8 +236,10 @@ export function ThermomixRecipeSelector({
   onViewRecipe,
   onBack,
 }: ThermomixRecipeSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useAtom(thermomixSearchTermAtom);
+  const [selectedCategory, setSelectedCategory] = useAtom(
+    thermomixSelectedCategoryAtom
+  );
 
   const filteredRecipes = sampleRecipes.filter((recipe) => {
     const matchesSearch = recipe.name

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useAtom } from "jotai";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -26,6 +26,7 @@ import {
   Save,
   RotateCcw,
 } from "lucide-react";
+import { ovenSettingsAtom, type OvenSettings } from "../store/atoms";
 
 interface OvenSettingsProps {
   onBack: () => void;
@@ -33,45 +34,17 @@ interface OvenSettingsProps {
 }
 
 export function OvenSettings({ onBack, onSave }: OvenSettingsProps) {
-  const [settings, setSettings] = useState({
-    // Temperature Settings
-    targetTemperature: 180,
-    temperatureUnit: "celsius",
-    preheating: true,
-
-    // Timer Settings
-    cookTime: { hours: 1, minutes: 30 },
-    alertSound: true,
-    alertVolume: 75,
-
-    // Cooking Modes
-    cookingMode: "conventional",
-    fanSpeed: 50,
-    steamLevel: 25,
-
-    // Safety & Maintenance
-    childLock: false,
-    autoShutoff: true,
-    ovenLight: true,
-
-    // Connectivity
-    wifiEnabled: true,
-    notifications: true,
-
-    // Display
-    brightness: 80,
-    nightMode: false,
-  });
+  const [settings, setSettings] = useAtom(ovenSettingsAtom);
 
   const handleSettingChange = (key: string, value: unknown) => {
-    setSettings((prev) => ({
+    setSettings((prev: OvenSettings) => ({
       ...prev,
       [key]: value,
     }));
   };
 
   const handleTimeChange = (type: "hours" | "minutes", value: string) => {
-    setSettings((prev) => ({
+    setSettings((prev: OvenSettings) => ({
       ...prev,
       cookTime: {
         ...prev.cookTime,

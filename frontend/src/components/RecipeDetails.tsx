@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useAtom } from "jotai";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -16,33 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-
-interface RecipePhase {
-  id: string;
-  name: string;
-  description: string;
-  temperature: number;
-  duration: number; // minutes
-  mode: "preheat" | "conventional" | "convection" | "grill" | "steam";
-  stopCondition: "time" | "temperature";
-  icon: string;
-}
-
-interface EnhancedRecipe {
-  id: string;
-  name: string;
-  category: string;
-  servings: number;
-  difficulty: "Easy" | "Medium" | "Hard";
-  rating: number;
-  image: string;
-  description: string;
-  ingredients: string[];
-  phases: RecipePhase[];
-  totalTime: number;
-  isFavorite: boolean;
-  tips: string[];
-}
+import { type EnhancedRecipe, selectedPhaseAtom } from "../store/atoms";
 
 interface RecipeDetailsProps {
   recipe: EnhancedRecipe;
@@ -55,7 +29,7 @@ export function RecipeDetails({
   onBack,
   onStartRecipe,
 }: RecipeDetailsProps) {
-  const [selectedPhase, setSelectedPhase] = useState<number>(0);
+  const [selectedPhase, setSelectedPhase] = useAtom(selectedPhaseAtom);
 
   const getModeIcon = (mode: string) => {
     switch (mode) {

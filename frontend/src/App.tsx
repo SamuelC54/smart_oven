@@ -1,72 +1,56 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useAtom } from "jotai";
 import { EnhancedThermomixDashboard } from "./components/EnhancedThermomixDashboard";
 import { ThermomixRecipeSelector } from "./components/ThermomixRecipeSelector";
 import { RecipeDetails } from "./components/RecipeDetails";
 import { ThermomixSettings } from "./components/ThermomixSettings";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
-
-type View = "dashboard" | "recipes" | "recipe-details" | "settings";
-type CookingMode = "timer" | "probe" | null;
-
-interface RecipePhase {
-  id: string;
-  name: string;
-  description: string;
-  temperature: number;
-  duration: number; // minutes
-  mode: "preheat" | "conventional" | "convection" | "grill" | "steam";
-  stopCondition: "time" | "temperature";
-  icon: string;
-}
-
-interface EnhancedRecipe {
-  id: string;
-  name: string;
-  category: string;
-  servings: number;
-  difficulty: "Easy" | "Medium" | "Hard";
-  rating: number;
-  image: string;
-  description: string;
-  ingredients: string[];
-  phases: RecipePhase[];
-  totalTime: number;
-  isFavorite: boolean;
-  tips: string[];
-}
+import {
+  currentViewAtom,
+  isRunningAtom,
+  currentTempAtom,
+  targetTempAtom,
+  timeRemainingAtom,
+  humidityAtom,
+  targetHumidityAtom,
+  fanSpeedAtom,
+  ingredientTempAtom,
+  selectedRecipeAtom,
+  viewingRecipeAtom,
+  currentPhaseAtom,
+  tempHistoryAtom,
+  cookingStartTimeAtom,
+  cookingModeAtom,
+  probeTargetTempAtom,
+  customTimerAtom,
+  totalPhasesAtom,
+  phaseNameAtom,
+  type EnhancedRecipe,
+} from "./store/atoms";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<View>("dashboard");
-  const [isRunning, setIsRunning] = useState(false);
-  const [currentTemp, setCurrentTemp] = useState(25);
-  const [targetTemp, setTargetTemp] = useState(180);
-  const [timeRemaining, setTimeRemaining] = useState("1:30:00");
-  const [humidity, setHumidity] = useState(45);
-  const [targetHumidity, setTargetHumidity] = useState(50);
-  const [fanSpeed, setFanSpeed] = useState(75);
-  const [ingredientTemp, setIngredientTemp] = useState(22);
-  const [selectedRecipe, setSelectedRecipe] = useState<EnhancedRecipe | null>(
-    null
-  );
-  const [viewingRecipe, setViewingRecipe] = useState<EnhancedRecipe | null>(
-    null
-  );
-  const [currentPhase, setCurrentPhase] = useState(0);
-  const [tempHistory, setTempHistory] = useState<
-    Array<{
-      time: string;
-      ovenTemp: number;
-      humidity: number;
-      foodTemp: number;
-    }>
-  >([]);
-  const [cookingStartTime, setCookingStartTime] = useState<Date | null>(null);
+  const [currentView, setCurrentView] = useAtom(currentViewAtom);
+  const [isRunning, setIsRunning] = useAtom(isRunningAtom);
+  const [currentTemp, setCurrentTemp] = useAtom(currentTempAtom);
+  const [targetTemp, setTargetTemp] = useAtom(targetTempAtom);
+  const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
+  const [humidity, setHumidity] = useAtom(humidityAtom);
+  const [targetHumidity, setTargetHumidity] = useAtom(targetHumidityAtom);
+  const [fanSpeed, setFanSpeed] = useAtom(fanSpeedAtom);
+  const [ingredientTemp, setIngredientTemp] = useAtom(ingredientTempAtom);
+  const [selectedRecipe, setSelectedRecipe] = useAtom(selectedRecipeAtom);
+  const [viewingRecipe, setViewingRecipe] = useAtom(viewingRecipeAtom);
+  const [currentPhase, setCurrentPhase] = useAtom(currentPhaseAtom);
+  const [tempHistory, setTempHistory] = useAtom(tempHistoryAtom);
+  const [cookingStartTime, setCookingStartTime] = useAtom(cookingStartTimeAtom);
+  const [cookingMode, setCookingMode] = useAtom(cookingModeAtom);
+  const [probeTargetTemp, setProbeTargetTemp] = useAtom(probeTargetTempAtom);
+  const [customTimer, setCustomTimer] = useAtom(customTimerAtom);
 
-  // New cooking mode states
-  const [cookingMode, setCookingMode] = useState<CookingMode>(null);
-  const [probeTargetTemp, setProbeTargetTemp] = useState(75);
-  const [customTimer, setCustomTimer] = useState({ hours: 1, minutes: 30 });
+  // Derived values
+  const totalPhases = useAtom(totalPhasesAtom)[0];
+  const phaseName = useAtom(phaseNameAtom)[0];
 
   // Initialize temperature history
   useEffect(() => {
@@ -411,8 +395,8 @@ export default function App() {
         ingredientTemp={ingredientTemp}
         isRunning={isRunning}
         currentPhase={currentPhase}
-        totalPhases={selectedRecipe?.phases.length || 0}
-        phaseName={selectedRecipe?.phases[currentPhase]?.name || ""}
+        totalPhases={totalPhases}
+        phaseName={phaseName}
         cookingMode={cookingMode}
         probeTargetTemp={probeTargetTemp}
         customTimer={customTimer}
