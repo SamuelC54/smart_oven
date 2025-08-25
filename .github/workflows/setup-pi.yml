@@ -34,17 +34,22 @@ jobs:
           chmod +x deploy/setup-scripts/enable-i2c.sh
           ./deploy/setup-scripts/enable-i2c.sh
 
-      - name: Configure display for portrait mode (Traditional graphics mode)
+      - name: Configure display for portrait mode (180° method - Freenove recommended)
         id: configure-display
         run: |
-          chmod +x deploy/setup-scripts/configure-display-traditional.sh
-          ./deploy/setup-scripts/configure-display-traditional.sh 90
+          chmod +x deploy/setup-scripts/configure-display-180.sh
+          ./deploy/setup-scripts/configure-display-180.sh
 
       - name: Configure touchscreen input for portrait mode (Freenove)
         id: configure-touchscreen
         run: |
           chmod +x deploy/setup-scripts/configure-touchscreen-freenove.sh
           ./deploy/setup-scripts/configure-touchscreen-freenove.sh 90
+
+      - name: Debug display configuration
+        run: |
+          chmod +x deploy/setup-scripts/debug-display.sh
+          ./deploy/setup-scripts/debug-display.sh
 
       - name: Verify configuration changes
         run: |
