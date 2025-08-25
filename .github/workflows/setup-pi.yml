@@ -8,343 +8,55 @@ jobs:
     outputs:
       needs-reboot: ${{ steps.check-reboot.outputs.needs-reboot }}
     steps:
-      - name: Check current system
+      - name: Check current system and SPI status
         run: |
-          echo "=== System Information ==="
-          echo "Device Model: $(cat /proc/device-tree/model 2>/dev/null || echo 'Unknown')"
-          echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
-          echo "Architecture: $(uname -m)"
-          echo "Kernel: $(uname -r)"
-          echo ""
-
-      - name: Check current SPI status
-        run: |
-          echo "=== Current SPI Status ==="
-          echo "SPI devices:"
-          ls -la /dev/spidev* 2>/dev/null || echo "No SPI devices found"
-          echo ""
-          echo "SPI kernel modules:"
-          lsmod | grep spi || echo "No SPI modules loaded"
-          echo ""
-          echo "SPI config in /boot/config.txt:"
-          grep -i spi /boot/config.txt 2>/dev/null || echo "No SPI config found"
-          echo ""
+          chmod +x deploy/setup-scripts/check-system.sh
+          ./deploy/setup-scripts/check-system.sh
 
       - name: Install Docker
         run: |
-          echo "Installing Docker..."
-
-          # Check if Docker is already installed
-          if command -v docker &> /dev/null; then
-            echo "Docker is already installed:"
-            docker --version
-            echo "Skipping Docker installation"
-          else
-            echo "Docker not found, installing..."
-
-            # Remove old versions
-            sudo apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
-
-            # Update package index
-            sudo apt-get update
-
-            # Install prerequisites
-            sudo apt-get install -y ca-certificates curl gnupg lsb-release
-
-            # Add Docker's official GPG key (non-interactive)
-            sudo mkdir -p /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --batch --dearmor -o /etc/apt/keyrings/docker.gpg
-
-            # Set up repository
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-            # Install Docker
-            sudo apt-get update
-            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-            echo "Docker installed successfully"
-          fi
-
-      - name: Add user to docker group
-        run: |
-          USERNAME="$(id -un)"
-          sudo usermod -aG docker "$USERNAME"
-          echo "Added $USERNAME to docker group."
+          chmod +x deploy/setup-scripts/install-docker.sh
+          ./deploy/setup-scripts/install-docker.sh
 
       - name: Enable SPI interface
         id: enable-spi
         run: |
-          echo "=== Enabling SPI Interface ==="
-
-          # Check if SPI is already enabled
-          if grep -q "dtparam=spi=on" /boot/config.txt; then
-            echo "SPI is already enabled in config.txt"
-            echo "spi_already_enabled=true" >> $GITHUB_OUTPUT
-          else
-            echo "Enabling SPI interface..."
-            # Add SPI enable line to config.txt
-            echo "dtparam=spi=on" | sudo tee -a /boot/config.txt
-            echo "SPI interface enabled in config.txt"
-            echo "spi_enabled=true" >> $GITHUB_OUTPUT
-          fi
-
-          # Also check for any existing SPI overlays
-          echo "Current SPI-related config:"
-          grep -i spi /boot/config.txt || echo "No SPI config found"
+          chmod +x deploy/setup-scripts/enable-spi.sh
+          ./deploy/setup-scripts/enable-spi.sh
 
       - name: Enable I2C interface (optional, for future use)
         id: enable-i2c
         run: |
-          echo "=== Enabling I2C Interface ==="
-
-          # Check if I2C is already enabled
-          if grep -q "dtparam=i2c_arm=on" /boot/config.txt; then
-            echo "I2C is already enabled in config.txt"
-            echo "i2c_already_enabled=true" >> $GITHUB_OUTPUT
-          else
-            echo "Enabling I2C interface..."
-            # Add I2C enable line to config.txt
-            echo "dtparam=i2c_arm=on" | sudo tee -a /boot/config.txt
-            echo "I2C interface enabled in config.txt"
-            echo "i2c_enabled=true" >> $GITHUB_OUTPUT
-          fi
+          chmod +x deploy/setup-scripts/enable-i2c.sh
+          ./deploy/setup-scripts/enable-i2c.sh
 
       - name: Configure display for portrait mode (Wayland/Wayfire)
         id: configure-display
         run: |
-          echo "=== Configuring Wayland/Wayfire Display for Portrait Mode ==="
-
-          # For Raspberry Pi 5 with DSI, we need to use different configuration
-          # Check if display rotation is already configured
-          if grep -q "display_rotate=" /boot/config.txt; then
-            echo "Display rotation already configured:"
-            grep "display_rotate=" /boot/config.txt
-            echo "display_already_configured=true" >> $GITHUB_OUTPUT
-          else
-            echo "Configuring DSI display for portrait mode..."
-            # Try multiple rotation methods for better compatibility
-            
-            # Method 1: Standard display_rotate
-            echo "display_rotate=1" | sudo tee -a /boot/config.txt
-            
-            # Method 2: Alternative rotation values to try
-            echo "# Alternative rotation methods (uncomment if needed):" | sudo tee -a /boot/config.txt
-            echo "# display_rotate=2  # 180 degrees" | sudo tee -a /boot/config.txt
-            echo "# display_rotate=3  # 270 degrees (90° counter-clockwise)" | sudo tee -a /boot/config.txt
-            
-            # Method 3: Try using lcd_rotate instead
-            echo "lcd_rotate=1" | sudo tee -a /boot/config.txt
-            
-            echo "DSI display configured for portrait mode (90° rotation)"
-            echo "display_configured=true" >> $GITHUB_OUTPUT
-          fi
-
-          # Configure DSI-specific settings for better compatibility
-          if ! grep -q "dtoverlay=vc4-kms-v3d" /boot/config.txt; then
-            echo "Enabling KMS driver for DSI display..."
-            echo "dtoverlay=vc4-kms-v3d" | sudo tee -a /boot/config.txt
-          fi
-
-          # Also configure framebuffer rotation for console
-          if grep -q "fbcon=rotate:" /boot/cmdline.txt; then
-            echo "Framebuffer rotation already configured:"
-            grep "fbcon=rotate:" /boot/cmdline.txt
-          else
-            echo "Configuring framebuffer rotation for console..."
-            # Add framebuffer rotation to cmdline.txt
-            sudo sed -i 's/$/ fbcon=rotate:1/' /boot/cmdline.txt
-            echo "Framebuffer rotation configured for portrait mode"
-          fi
-
-          # Configure Wayfire display rotation (Wayland)
-          echo "Configuring Wayfire display rotation..."
-          WAYFIRE_CONFIG="$HOME/.config/wayfire.ini"
-
-          # Create wayfire config directory if it doesn't exist
-          sudo mkdir -p "$(dirname "$WAYFIRE_CONFIG")"
-
-          # Check if wayfire config already has output section
-          if [ -f "$WAYFIRE_CONFIG" ] && grep -q "\[output:DSI-1\]" "$WAYFIRE_CONFIG"; then
-            echo "Wayfire config already has DSI-1 output section, updating transform..."
-            # Update existing transform
-            sudo sed -i '/\[output:DSI-1\]/,/^\[/ s/^transform = .*/transform = 90/' "$WAYFIRE_CONFIG"
-          else
-            echo "Adding DSI-1 output section to wayfire config..."
-            # Add new output section
-            echo "" | sudo tee -a "$WAYFIRE_CONFIG"
-            echo "[output:DSI-1]" | sudo tee -a "$WAYFIRE_CONFIG"
-            echo "transform = 90" | sudo tee -a "$WAYFIRE_CONFIG"
-          fi
-
-          echo "Wayland/Wayfire Display configuration summary:"
-          echo "  - display_rotate=1 (90° clockwise rotation)"
-          echo "  - dtoverlay=vc4-kms-v3d (KMS driver for DSI)"
-          echo "  - fbcon=rotate=1 (console rotation)"
-          echo "  - Wayfire transform=90 (Wayland display rotation)"
-          echo "  - This will make the DSI screen display in portrait mode"
+          chmod +x deploy/setup-scripts/configure-display.sh
+          ./deploy/setup-scripts/configure-display.sh
 
       - name: Configure touchscreen input for portrait mode (Wayland)
         id: configure-touchscreen
         run: |
-          echo "=== Configuring Touchscreen Input for Portrait Mode (Wayland) ==="
-
-          # Create udev hwdb configuration for persistent touchscreen rotation
-          HWDB_FILE="/etc/udev/hwdb.d/99-touchscreen-rotation.hwdb"
-
-          echo "Creating udev hwdb configuration for touchscreen rotation..."
-          sudo mkdir -p "$(dirname "$HWDB_FILE")"
-
-          # Create the hwdb file with common touchscreen names
-          echo "# Touchscreen rotation for portrait mode (90° clockwise)" | sudo tee "$HWDB_FILE"
-          echo "# Common Raspberry Pi touchscreen names - adjust if needed" | sudo tee -a "$HWDB_FILE"
-          echo "" | sudo tee -a "$HWDB_FILE"
-          echo "# FT5406 touchscreen (common on Pi displays)" | sudo tee -a "$HWDB_FILE"
-          echo "evdev:name:FT5406*" | sudo tee -a "$HWDB_FILE"
-          echo " LIBINPUT_CALIBRATION_MATRIX=0 1 0 -1 0 1 0 0 1" | sudo tee -a "$HWDB_FILE"
-          echo "" | sudo tee -a "$HWDB_FILE"
-          echo "# Alternative touchscreen names (uncomment and adjust as needed)" | sudo tee -a "$HWDB_FILE"
-          echo "# evdev:name:ADS7846*" | sudo tee -a "$HWDB_FILE"
-          echo "#  LIBINPUT_CALIBRATION_MATRIX=0 1 0 -1 0 1 0 0 1" | sudo tee -a "$HWDB_FILE"
-          echo "" | sudo tee -a "$HWDB_FILE"
-          echo "# evdev:name:Goodix*" | sudo tee -a "$HWDB_FILE"
-          echo "#  LIBINPUT_CALIBRATION_MATRIX=0 1 0 -1 0 1 0 0 1" | sudo tee -a "$HWDB_FILE"
-          echo "" | sudo tee -a "$HWDB_FILE"
-          echo "# evdev:name:FT5*" | sudo tee -a "$HWDB_FILE"
-          echo "#  LIBINPUT_CALIBRATION_MATRIX=0 1 0 -1 0 1 0 0 1" | sudo tee -a "$HWDB_FILE"
-
-          # Update hwdb and trigger udev
-          echo "Updating hardware database..."
-          sudo systemd-hwdb update
-
-          echo "Triggering udev for input devices..."
-          sudo udevadm trigger /dev/input/event*
-
-          echo "Touchscreen configuration summary:"
-          echo "  - udev hwdb file created: $HWDB_FILE"
-          echo "  - Transformation matrix: [0 1 0 -1 0 1 0 0 1] (90° clockwise)"
-          echo "  - Configuration is persistent and survives reboots"
-          echo "  - No scripts needed - uses native udev system"
-          echo "  - Touch input will be aligned with portrait display orientation"
-          echo ""
-          echo "Note: If touchscreen name differs, check with: libinput list-devices"
-          echo "Then update the hwdb file with the correct device name"
-          echo "touchscreen_configured=true" >> $GITHUB_OUTPUT
+          chmod +x deploy/setup-scripts/configure-touchscreen.sh
+          ./deploy/setup-scripts/configure-touchscreen.sh
 
       - name: Verify configuration changes
         run: |
-          echo "=== Configuration Verification ==="
-          echo "Current /boot/config.txt SPI and I2C settings:"
-          grep -E "(spi|i2c)" /boot/config.txt || echo "No SPI/I2C settings found"
-          echo ""
-          echo "Current /boot/config.txt display settings:"
-          grep -E "(display_rotate|vc4-kms-v3d)" /boot/config.txt || echo "No display settings found"
-          echo ""
-          echo "Current /boot/cmdline.txt framebuffer settings:"
-          grep -E "(fbcon=rotate)" /boot/cmdline.txt || echo "No framebuffer rotation found"
-          echo ""
-          echo "Full config.txt (last 20 lines):"
-          tail -20 /boot/config.txt
-
-      - name: Check current GPIO and SPI status
-        run: |
-          echo "=== Current Hardware Status ==="
-          echo "GPIO chips available:"
-          ls -la /sys/class/gpio/ 2>/dev/null || echo "GPIO sysfs not accessible"
-          echo ""
-          echo "SPI devices:"
-          ls -la /dev/spidev* 2>/dev/null || echo "No SPI devices found (normal before reboot)"
-          echo ""
-          echo "I2C devices:"
-          ls -la /dev/i2c* 2>/dev/null || echo "No I2C devices found (normal before reboot)"
+          chmod +x deploy/setup-scripts/verify-config.sh
+          ./deploy/setup-scripts/verify-config.sh
 
       - name: Determine if reboot is needed
         id: check-reboot
         run: |
-          echo "=== Checking if reboot is needed ==="
-
-          # Check if any hardware interfaces were enabled
-          SPI_ENABLED="${{ steps.enable-spi.outputs.spi_enabled }}"
-          I2C_ENABLED="${{ steps.enable-i2c.outputs.i2c_enabled }}"
-          DISPLAY_ENABLED="${{ steps.configure-display.outputs.display_configured }}"
-          TOUCHSCREEN_ENABLED="${{ steps.configure-touchscreen.outputs.touchscreen_configured }}"
-
-          # Check if SPI devices are missing (indicates need for reboot)
-          SPI_DEVICES_MISSING=false
-          if [ ! -e "/dev/spidev0.0" ] && [ ! -e "/dev/spidev0.1" ]; then
-            SPI_DEVICES_MISSING=true
-          fi
-
-          # Check if I2C devices are missing
-          I2C_DEVICES_MISSING=false
-          if [ ! -e "/dev/i2c-1" ]; then
-            I2C_DEVICES_MISSING=true
-          fi
-
-          # Determine if reboot is needed
-          NEEDS_REBOOT=false
-          REBOOT_REASONS=()
-
-          if [ "$SPI_ENABLED" = "true" ]; then
-            NEEDS_REBOOT=true
-            REBOOT_REASONS+=("SPI was enabled")
-          fi
-
-          if [ "$I2C_ENABLED" = "true" ]; then
-            NEEDS_REBOOT=true
-            REBOOT_REASONS+=("I2C was enabled")
-          fi
-
-          if [ "$DISPLAY_ENABLED" = "true" ]; then
-            NEEDS_REBOOT=true
-            REBOOT_REASONS+=("Display rotation was configured")
-          fi
-
-          if [ "$TOUCHSCREEN_ENABLED" = "true" ]; then
-            NEEDS_REBOOT=true
-            REBOOT_REASONS+=("Touchscreen configuration was added")
-          fi
-
-          if [ "$SPI_DEVICES_MISSING" = "true" ] && grep -q "dtparam=spi=on" /boot/config.txt; then
-            NEEDS_REBOOT=true
-            REBOOT_REASONS+=("SPI devices missing")
-          fi
-
-          if [ "$I2C_DEVICES_MISSING" = "true" ] && grep -q "dtparam=i2c_arm=on" /boot/config.txt; then
-            NEEDS_REBOOT=true
-            REBOOT_REASONS+=("I2C devices missing")
-          fi
-
-          # Set output
-          if [ "$NEEDS_REBOOT" = "true" ]; then
-            echo "needs-reboot=true" >> $GITHUB_OUTPUT
-            echo "Reboot needed for: ${REBOOT_REASONS[*]}"
-          else
-            echo "needs-reboot=false" >> $GITHUB_OUTPUT
-            echo "No reboot needed - all hardware interfaces are working"
-          fi
+          chmod +x deploy/setup-scripts/check-reboot.sh
+          ./deploy/setup-scripts/check-reboot.sh
 
       - name: Setup summary
         run: |
-          echo "=============================================================="
-          echo "Setup completed successfully!"
-          echo ""
-          if [ "${{ steps.check-reboot.outputs.needs-reboot }}" = "true" ]; then
-            echo "REBOOT REQUIRED: Hardware interfaces need to be activated"
-            echo "The Pi will reboot automatically in the next step."
-          else
-            echo "No reboot needed - everything is working!"
-          fi
-          echo ""
-          echo "After setup, verify everything is working:"
-          echo "  ls -la /dev/spidev*"
-          echo "  lsmod | grep spi"
-          echo "  docker --version"
-          echo "  # Display should be in portrait mode after reboot"
-          echo "  # Touchscreen should be aligned with portrait orientation"
-          echo "  # Test touchscreen: libinput list-devices (to see device name)"
-          echo "  # Check Wayfire config: cat ~/.config/wayfire.ini"
-          echo "  # Check hwdb config: cat /etc/udev/hwdb.d/99-touchscreen-rotation.hwdb"
-          echo "=============================================================="
+          chmod +x deploy/setup-scripts/setup-summary.sh
+          ./deploy/setup-scripts/setup-summary.sh
 
   reboot:
     runs-on: [self-hosted]
