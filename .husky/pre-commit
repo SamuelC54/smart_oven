@@ -1,21 +1,18 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
 echo "🔍 Running pre-commit checks..."
 
 # Run TypeScript type checking for frontend
 echo "📝 TypeScript type checking..."
-cd frontend
-npx tsc --noEmit --project tsconfig.json
+npm run typecheck
 if [ $? -ne 0 ]; then
   echo "❌ TypeScript type checking failed"
   exit 1
 fi
-cd ..
 
 # Run lint-staged (ESLint + Prettier on staged files)
 echo "🧹 Running lint-staged..."
-npx lint-staged
+npm run lint-staged
 if [ $? -ne 0 ]; then
   echo "❌ Lint-staged failed"
   exit 1
