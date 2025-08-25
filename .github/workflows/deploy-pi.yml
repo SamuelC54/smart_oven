@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths:
       - "frontend/**"
-      - "deploy/**"
+      - "deploy/systemd/**"
       - "api/**"
       - ".github/workflows/deploy-pi.yml"
       - ".github/actions/**"
@@ -38,7 +38,7 @@ jobs:
           fi
 
           # Check for systemd changes
-          if echo "$CHANGED_FILES" | grep -q "deploy/" || \
+          if echo "$CHANGED_FILES" | grep -q "deploy/systemd/" || \
              echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-pi\.yml" || \
              echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
             echo "systemd=true" >> $GITHUB_OUTPUT
