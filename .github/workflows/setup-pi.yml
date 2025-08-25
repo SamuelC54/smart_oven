@@ -165,6 +165,59 @@ jobs:
           echo "  - X11 rotation configured (if desktop environment)"
           echo "  - This will make the DSI screen display in portrait mode"
 
+      - name: Configure touchscreen input for portrait mode
+        id: configure-touchscreen
+        run: |
+          echo "=== Configuring Touchscreen Input for Portrait Mode ==="
+
+          # Create autostart script for touchscreen transformation
+          AUTOSTART_DIR="/etc/xdg/autostart"
+          SCRIPT_NAME="touchscreen-rotation.desktop"
+
+          echo "Creating touchscreen rotation autostart script..."
+          sudo mkdir -p "$AUTOSTART_DIR"
+
+          # Create the autostart desktop file
+          echo '[Desktop Entry]' | sudo tee "$AUTOSTART_DIR/$SCRIPT_NAME"
+          echo 'Type=Application' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
+          echo 'Name=Touchscreen Rotation' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
+          echo 'Exec=/usr/local/bin/touchscreen-rotation.sh' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
+          echo 'Terminal=false' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
+          echo 'X-GNOME-Autostart-enabled=true' | sudo tee -a "$AUTOSTART_DIR/$SCRIPT_NAME"
+
+          # Create the actual rotation script
+          ROTATION_SCRIPT="/usr/local/bin/touchscreen-rotation.sh"
+          echo '#!/bin/bash' | sudo tee "$ROTATION_SCRIPT"
+          echo '' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '# Wait for X server to be ready' | sudo tee -a "$ROTATION_SCRIPT"
+          echo 'sleep 5' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '# Find touchscreen device' | sudo tee -a "$ROTATION_SCRIPT"
+          echo 'TOUCH_DEVICE=$(xinput list | grep -i "touch" | grep -o "id=[0-9]*" | head -1 | cut -d= -f2)' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '' | sudo tee -a "$ROTATION_SCRIPT"
+          echo 'if [ -n "$TOUCH_DEVICE" ]; then' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '    echo "Found touchscreen device ID: $TOUCH_DEVICE"' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '    ' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '    # Apply 90° rotation transformation matrix' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '    # Matrix: [0 1 0 -1 0 1 0 0 1] for 90° clockwise rotation' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '    xinput set-prop "$TOUCH_DEVICE" '\''Coordinate Transformation Matrix'\'' 0 1 0 -1 0 1 0 0 1' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '    ' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '    echo "Touchscreen rotation applied for device ID: $TOUCH_DEVICE"' | sudo tee -a "$ROTATION_SCRIPT"
+          echo 'else' | sudo tee -a "$ROTATION_SCRIPT"
+          echo '    echo "No touchscreen device found"' | sudo tee -a "$ROTATION_SCRIPT"
+          echo 'fi' | sudo tee -a "$ROTATION_SCRIPT"
+
+          # Make the script executable
+          sudo chmod +x "$ROTATION_SCRIPT"
+
+          echo "Touchscreen configuration summary:"
+          echo "  - Autostart script created: $AUTOSTART_DIR/$SCRIPT_NAME"
+          echo "  - Rotation script created: $ROTATION_SCRIPT"
+          echo "  - Transformation matrix: [0 1 0 -1 0 1 0 0 1] (90° clockwise)"
+          echo "  - Script will auto-detect touchscreen device and apply rotation"
+          echo "  - Touch input will be aligned with portrait display orientation"
+          echo "touchscreen_configured=true" >> $GITHUB_OUTPUT
+
       - name: Verify configuration changes
         run: |
           echo "=== Configuration Verification ==="
@@ -201,6 +254,7 @@ jobs:
           SPI_ENABLED="${{ steps.enable-spi.outputs.spi_enabled }}"
           I2C_ENABLED="${{ steps.enable-i2c.outputs.i2c_enabled }}"
           DISPLAY_ENABLED="${{ steps.configure-display.outputs.display_configured }}"
+          TOUCHSCREEN_ENABLED="${{ steps.configure-touchscreen.outputs.touchscreen_configured }}"
 
           # Check if SPI devices are missing (indicates need for reboot)
           SPI_DEVICES_MISSING=false
@@ -231,6 +285,11 @@ jobs:
           if [ "$DISPLAY_ENABLED" = "true" ]; then
             NEEDS_REBOOT=true
             REBOOT_REASONS+=("Display rotation was configured")
+          fi
+
+          if [ "$TOUCHSCREEN_ENABLED" = "true" ]; then
+            NEEDS_REBOOT=true
+            REBOOT_REASONS+=("Touchscreen configuration was added")
           fi
 
           if [ "$SPI_DEVICES_MISSING" = "true" ] && grep -q "dtparam=spi=on" /boot/config.txt; then
@@ -269,6 +328,9 @@ jobs:
           echo "  lsmod | grep spi"
           echo "  docker --version"
           echo "  # Display should be in portrait mode after reboot"
+          echo "  # Touchscreen should be aligned with portrait orientation"
+          echo "  # Test touchscreen: xinput list (to see device ID)"
+          echo "  # Manual touchscreen rotation: xinput set-prop <ID> 'Coordinate Transformation Matrix' 0 1 0 -1 0 1 0 0 1"
           echo "=============================================================="
 
   reboot:
