@@ -37,8 +37,8 @@ jobs:
       - name: Configure display for portrait mode (Traditional graphics mode)
         id: configure-display
         run: |
-          chmod +x deploy/setup-scripts/configure-display-fkms.sh
-          ./deploy/setup-scripts/configure-display-fkms.sh 90 traditional
+          chmod +x deploy/setup-scripts/configure-display-traditional.sh
+          ./deploy/setup-scripts/configure-display-traditional.sh 90
 
       - name: Configure touchscreen input for portrait mode (Freenove)
         id: configure-touchscreen

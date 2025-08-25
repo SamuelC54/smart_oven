@@ -80,10 +80,9 @@ if [ "$DISPLAY_MODE" = "traditional" ]; then
     sudo sed -i 's/^dtoverlay=vc4-kms-v3d/#dtoverlay=vc4-kms-v3d/' "$CONFIG_FILE"
     sudo sed -i 's/^dtoverlay=vc4-fkms-v3d/#dtoverlay=vc4-fkms-v3d/' "$CONFIG_FILE"
     
-    # Add traditional graphics mode overlay
-    if ! grep -q "dtoverlay=vc4-fkms-v3d" "$CONFIG_FILE"; then
-        echo "dtoverlay=vc4-fkms-v3d" | sudo tee -a "$CONFIG_FILE"
-    fi
+    # Add traditional graphics mode overlay (no KMS/FKMS overlay needed)
+    # Traditional mode works without any specific overlay
+    echo "Traditional graphics mode - no overlay needed"
     
     # Add display rotation parameters
     case $ROTATION_DEGREES in
