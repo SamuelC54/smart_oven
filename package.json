@@ -18,7 +18,10 @@
     "lint-staged": "lint-staged",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit --project frontend/tsconfig.json"
+    "typecheck": "tsc --noEmit --project frontend/tsconfig.json",
+    "deadcode": "cd frontend && npm run deadcode",
+    "deadcode:strict": "cd frontend && npm run deadcode:strict",
+    "deadcode:summary": "cd frontend && npm run deadcode:summary"
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [

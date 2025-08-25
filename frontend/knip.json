@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["src/main.tsx"],
+  "project": ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
+  "ignoreDependencies": [],
+  "ignoreBinaries": [],
+  "ignore": ["src/components/ui/**/*"],
+  "rules": {
+    "exports": "warn",
+    "files": "warn",
+    "dependencies": "warn",
+    "devDependencies": "warn",
+    "unlisted": "error",
+    "binaries": "error",
+    "types": "warn"
+  }
+}

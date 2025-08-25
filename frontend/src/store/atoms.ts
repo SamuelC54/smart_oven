@@ -1,10 +1,10 @@
 import { atom } from "jotai";
 
 // Types
-export type View = "dashboard" | "recipes" | "recipe-details" | "settings";
-export type CookingMode = "timer" | "probe" | null;
+type View = "dashboard" | "recipes" | "recipe-details" | "settings";
+type CookingMode = "timer" | "probe" | null;
 
-export interface RecipePhase {
+interface RecipePhase {
   id: string;
   name: string;
   description: string;
@@ -15,7 +15,7 @@ export interface RecipePhase {
   icon: string;
 }
 
-export interface EnhancedRecipe {
+interface EnhancedRecipe {
   id: string;
   name: string;
   category: string;
@@ -31,50 +31,16 @@ export interface EnhancedRecipe {
   tips: string[];
 }
 
-export interface TempHistoryEntry {
+interface TempHistoryEntry {
   time: string;
   ovenTemp: number;
   humidity: number;
   foodTemp: number;
 }
 
-export interface CustomTimer {
+interface CustomTimer {
   hours: number;
   minutes: number;
-}
-
-// Component-specific interfaces
-export interface OvenSettings {
-  // Temperature Settings
-  targetTemperature: number;
-  temperatureUnit: "celsius" | "fahrenheit";
-  preheating: boolean;
-
-  // Timer Settings
-  cookTime: { hours: number; minutes: number };
-  alertSound: boolean;
-  alertVolume: number;
-
-  // Cooking Modes
-  cookingMode: string;
-  fanSpeed: number;
-  steamLevel: number;
-
-  // Safety & Maintenance
-  childLock: boolean;
-  autoShutoff: boolean;
-  ovenLight: boolean;
-
-  // Connectivity
-  wifiEnabled: boolean;
-  notifications: boolean;
-
-  // Display
-  brightness: number;
-  nightMode: boolean;
-
-  // Allow string indexing
-  [key: string]: unknown;
 }
 
 export interface ThermomixSettings {
@@ -119,37 +85,7 @@ export const cookingModeAtom = atom<CookingMode>(null);
 export const probeTargetTempAtom = atom(75);
 export const customTimerAtom = atom<CustomTimer>({ hours: 1, minutes: 30 });
 
-// Component-specific atoms
-export const ovenSettingsAtom = atom<OvenSettings>({
-  // Temperature Settings
-  targetTemperature: 180,
-  temperatureUnit: "celsius",
-  preheating: true,
-
-  // Timer Settings
-  cookTime: { hours: 1, minutes: 30 },
-  alertSound: true,
-  alertVolume: 75,
-
-  // Cooking Modes
-  cookingMode: "conventional",
-  fanSpeed: 50,
-  steamLevel: 25,
-
-  // Safety & Maintenance
-  childLock: false,
-  autoShutoff: true,
-  ovenLight: true,
-
-  // Connectivity
-  wifiEnabled: true,
-  notifications: true,
-
-  // Display
-  brightness: 80,
-  nightMode: false,
-});
-
+// Thermomix settings atom
 export const thermomixSettingsAtom = atom<ThermomixSettings>({
   temperatureUnit: "celsius",
   preheating: true,
@@ -163,10 +99,6 @@ export const thermomixSettingsAtom = atom<ThermomixSettings>({
   brightness: 80,
   nightMode: false,
 });
-
-// Recipe selector atoms
-export const recipeSearchTermAtom = atom("");
-export const recipeSelectedCategoryAtom = atom("all");
 
 // Thermomix recipe selector atoms
 export const thermomixSearchTermAtom = atom("");
