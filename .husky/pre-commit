@@ -5,11 +5,13 @@ echo "🔍 Running pre-commit checks..."
 
 # Run TypeScript type checking for frontend
 echo "📝 TypeScript type checking..."
-cd frontend && npx tsc --noEmit
+cd frontend
+npx tsc --noEmit --project tsconfig.json
 if [ $? -ne 0 ]; then
   echo "❌ TypeScript type checking failed"
   exit 1
 fi
+cd ..
 
 # Run lint-staged (ESLint + Prettier on staged files)
 echo "🧹 Running lint-staged..."
