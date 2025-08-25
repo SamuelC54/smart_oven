@@ -8,6 +8,10 @@ jobs:
     outputs:
       needs-reboot: ${{ steps.check-reboot.outputs.needs-reboot }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: Check current system and SPI status
         run: |
           chmod +x deploy/setup-scripts/check-system.sh
