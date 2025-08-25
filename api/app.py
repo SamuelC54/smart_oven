@@ -1,11 +1,23 @@
 import asyncio
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
 from logger import logger
 from hardware import HARDWARE_AVAILABLE
 from routes import health, temperature, gpio, debug
 
 app = FastAPI(title="Pi Sensor/GPIO API (Docker)")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "*",  # Allow all origins for development (remove in production)
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Log startup configuration
 logger.info(f"Starting Smart Oven API with config: RTD={RTD_NOMINAL}, REF={REF_RESISTOR}, WIRES={WIRES}, CS={CS_NAME}")

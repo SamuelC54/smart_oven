@@ -4,7 +4,7 @@ A React-based frontend for the Smart Oven application with TanStack Router, Jota
 
 ## Environment Variables
 
-The application uses environment variables to configure the API endpoint. Create a `.env` file in the frontend directory with the following variables:
+The application uses environment variables to configure the API endpoint. Create a `.env` or `.env.local` file in the frontend directory with the following variables:
 
 ```env
 VITE_API_URL=http://192.168.0.71:8081/
@@ -17,7 +17,34 @@ VITE_API_URL=http://192.168.0.71:8081/
 ### Environment Files
 
 - `.env`: Local environment variables (not committed to git)
+- `.env.local`: Local environment variables with higher priority (not committed to git)
 - `.env.example`: Example environment file (committed to git)
+
+### Troubleshooting Environment Variables
+
+If the environment variables are not being loaded:
+
+1. **Restart the development server** after creating/modifying .env files
+2. **Use .env.local** instead of .env for local development
+3. **Check the file format** - ensure no extra spaces or quotes
+4. **Verify the variable name** starts with `VITE_` for client-side access
+
+### CORS Issues
+
+If you encounter CORS errors when connecting to your API:
+
+1. **API Server CORS**: Ensure your API server has CORS middleware configured
+2. **Allowed Origins**: The API should allow requests from your frontend origin
+3. **Network Access**: Verify the API server is accessible from your frontend
+4. **Port Configuration**: Check that the API server is running on the correct port
+
+### Environment Variable Priority
+
+Vite loads environment variables in this order (highest to lowest priority):
+
+1. `.env.local` (always loaded, ignored by git)
+2. `.env.development` (when NODE_ENV=development)
+3. `.env` (always loaded)
 
 ## API Services
 
