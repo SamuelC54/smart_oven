@@ -3,9 +3,9 @@
 
 echo "🔍 Running pre-commit checks..."
 
-# Run TypeScript type checking
+# Run TypeScript type checking for frontend
 echo "📝 TypeScript type checking..."
-npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 if [ $? -ne 0 ]; then
   echo "❌ TypeScript type checking failed"
   exit 1
