@@ -13,8 +13,6 @@ import {
   targetTempAtom,
   timeRemainingAtom,
   humidityAtom,
-  targetHumidityAtom,
-  fanSpeedAtom,
   ingredientTempAtom,
   selectedRecipeAtom,
   viewingRecipeAtom,
@@ -22,10 +20,8 @@ import {
   tempHistoryAtom,
   cookingStartTimeAtom,
   cookingModeAtom,
+  targetHumidityAtom,
   probeTargetTempAtom,
-  customTimerAtom,
-  totalPhasesAtom,
-  phaseNameAtom,
   type EnhancedRecipe,
 } from "./store/atoms";
 
@@ -36,21 +32,15 @@ export default function App() {
   const [targetTemp, setTargetTemp] = useAtom(targetTempAtom);
   const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
   const [humidity, setHumidity] = useAtom(humidityAtom);
-  const [targetHumidity, setTargetHumidity] = useAtom(targetHumidityAtom);
-  const [fanSpeed, setFanSpeed] = useAtom(fanSpeedAtom);
   const [ingredientTemp, setIngredientTemp] = useAtom(ingredientTempAtom);
   const [selectedRecipe, setSelectedRecipe] = useAtom(selectedRecipeAtom);
-  const [viewingRecipe, setViewingRecipe] = useAtom(viewingRecipeAtom);
+  const [viewingRecipe] = useAtom(viewingRecipeAtom);
   const [currentPhase, setCurrentPhase] = useAtom(currentPhaseAtom);
-  const [tempHistory, setTempHistory] = useAtom(tempHistoryAtom);
+  const [, setTempHistory] = useAtom(tempHistoryAtom);
   const [cookingStartTime, setCookingStartTime] = useAtom(cookingStartTimeAtom);
   const [cookingMode, setCookingMode] = useAtom(cookingModeAtom);
-  const [probeTargetTemp, setProbeTargetTemp] = useAtom(probeTargetTempAtom);
-  const [customTimer, setCustomTimer] = useAtom(customTimerAtom);
-
-  // Derived values
-  const totalPhases = useAtom(totalPhasesAtom)[0];
-  const phaseName = useAtom(phaseNameAtom)[0];
+  const [targetHumidity] = useAtom(targetHumidityAtom);
+  const [probeTargetTemp] = useAtom(probeTargetTempAtom);
 
   // Initialize temperature history
   useEffect(() => {
@@ -212,22 +202,6 @@ export default function App() {
     }
   }, [isRunning, cookingMode]);
 
-  const handleToggleRunning = () => {
-    if (!isRunning && cookingMode === null) {
-      toast.error("⚠️ Please select Timer or Probe mode first");
-      return;
-    }
-
-    setIsRunning(!isRunning);
-    if (!isRunning) {
-      setCookingStartTime(new Date());
-      const modeText = cookingMode === "timer" ? "Timer" : "Probe";
-      toast.success(`🔥 Oven started in ${modeText} mode!`);
-    } else {
-      setCookingStartTime(null);
-    }
-  };
-
   const handleSelectRecipe = (recipe: EnhancedRecipe) => {
     setSelectedRecipe(recipe);
     setCurrentPhase(0);
@@ -249,77 +223,8 @@ export default function App() {
     toast.success(`📋 Recipe "${recipe.name}" loaded successfully!`);
   };
 
-  const handleViewRecipe = (recipe: EnhancedRecipe) => {
-    setViewingRecipe(recipe);
-    setCurrentView("recipe-details");
-  };
-
   const handleStartRecipeFromDetails = (recipe: EnhancedRecipe) => {
     handleSelectRecipe(recipe);
-  };
-
-  const handleSaveSettings = () => {
-    setCurrentView("dashboard");
-    toast.success("⚙️ Settings saved successfully!");
-  };
-
-  const handleTempAdjust = (delta: number) => {
-    const newTemp = Math.max(50, Math.min(300, targetTemp + delta));
-    setTargetTemp(newTemp);
-  };
-
-  const handleTimeAdjust = (minutes: number) => {
-    const [hours, mins, seconds] = timeRemaining.split(":").map(Number);
-    let totalMinutes = hours * 60 + mins + minutes;
-
-    // Prevent negative time
-    if (totalMinutes < 0) totalMinutes = 0;
-
-    const newHours = Math.floor(totalMinutes / 60);
-    const newMinutes = totalMinutes % 60;
-
-    setTimeRemaining(
-      `${newHours}:${newMinutes.toString().padStart(2, "0")}:${seconds
-        .toString()
-        .padStart(2, "0")}`
-    );
-  };
-
-  const handleAddTimer = () => {
-    setCookingMode("timer");
-    const totalMinutes = customTimer.hours * 60 + customTimer.minutes;
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    setTimeRemaining(`${hours}:${minutes.toString().padStart(2, "0")}:00`);
-  };
-
-  const handleAddProbe = () => {
-    setCookingMode("probe");
-  };
-
-  const handleRemoveTimer = () => {
-    setCookingMode(null);
-    setTimeRemaining("0:00:00");
-  };
-
-  const handleRemoveProbe = () => {
-    setCookingMode(null);
-  };
-
-  const handleHumidityChange = (value: number) => {
-    setTargetHumidity(value);
-  };
-
-  const handleFanSpeedChange = (value: number) => {
-    setFanSpeed(value);
-  };
-
-  const handleProbeTargetChange = (value: number) => {
-    setProbeTargetTemp(value);
-  };
-
-  const handleCustomTimerChange = (hours: number, minutes: number) => {
-    setCustomTimer({ hours, minutes });
   };
 
   // Main container with fixed dimensions for 800x480 vertical touch screen
@@ -330,11 +235,7 @@ export default function App() {
     return (
       <div className={containerClass}>
         <Toaster position="top-center" />
-        <RecipeSelector
-          onSelectRecipe={handleSelectRecipe}
-          onViewRecipe={handleViewRecipe}
-          onBack={() => setCurrentView("dashboard")}
-        />
+        <RecipeSelector />
       </div>
     );
   }
@@ -356,10 +257,7 @@ export default function App() {
     return (
       <div className={containerClass}>
         <Toaster position="top-center" />
-        <OvenSettings
-          onBack={() => setCurrentView("dashboard")}
-          onSave={handleSaveSettings}
-        />
+        <OvenSettings />
       </div>
     );
   }
@@ -367,36 +265,7 @@ export default function App() {
   return (
     <div className={containerClass}>
       <Toaster position="top-center" />
-      <OvenDashboard
-        currentTemp={currentTemp}
-        targetTemp={targetTemp}
-        timeRemaining={timeRemaining}
-        humidity={humidity}
-        targetHumidity={targetHumidity}
-        fanSpeed={fanSpeed}
-        ingredientTemp={ingredientTemp}
-        isRunning={isRunning}
-        currentPhase={currentPhase}
-        totalPhases={totalPhases}
-        phaseName={phaseName}
-        cookingMode={cookingMode}
-        probeTargetTemp={probeTargetTemp}
-        customTimer={customTimer}
-        onToggleRunning={handleToggleRunning}
-        onOpenSettings={() => setCurrentView("settings")}
-        onOpenRecipes={() => setCurrentView("recipes")}
-        onTempAdjust={handleTempAdjust}
-        onTimeAdjust={handleTimeAdjust}
-        onAddTimer={handleAddTimer}
-        onAddProbe={handleAddProbe}
-        onRemoveTimer={handleRemoveTimer}
-        onRemoveProbe={handleRemoveProbe}
-        onHumidityChange={handleHumidityChange}
-        onFanSpeedChange={handleFanSpeedChange}
-        onProbeTargetChange={handleProbeTargetChange}
-        onCustomTimerChange={handleCustomTimerChange}
-        tempHistory={tempHistory}
-      />
+      <OvenDashboard />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useAtom } from "jotai";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
@@ -17,74 +18,98 @@ import {
   Droplets,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import {
+  currentViewAtom,
+  isRunningAtom,
+  currentTempAtom,
+  targetTempAtom,
+  timeRemainingAtom,
+  humidityAtom,
+  targetHumidityAtom,
+  fanSpeedAtom,
+  ingredientTempAtom,
+  currentPhaseAtom,
+  totalPhasesAtom,
+  phaseNameAtom,
+  cookingModeAtom,
+  probeTargetTempAtom,
+  customTimerAtom,
+  tempHistoryAtom,
+} from "../store/atoms";
 
-type CookingMode = "timer" | "probe" | null;
+export function OvenDashboard() {
+  // Navigation atoms
+  const [, setCurrentView] = useAtom(currentViewAtom);
 
-interface OvenDashboardProps {
-  currentTemp: number;
-  targetTemp: number;
-  timeRemaining: string;
-  humidity: number;
-  targetHumidity: number;
-  fanSpeed: number;
-  ingredientTemp: number;
-  isRunning: boolean;
-  currentPhase: number;
-  totalPhases: number;
-  phaseName: string;
-  cookingMode: CookingMode;
-  probeTargetTemp: number;
-  customTimer: { hours: number; minutes: number };
-  onToggleRunning: () => void;
-  onOpenSettings: () => void;
-  onOpenRecipes: () => void;
-  onTempAdjust: (delta: number) => void;
-  onTimeAdjust: (minutes: number) => void;
-  onAddTimer: () => void;
-  onAddProbe: () => void;
-  onRemoveTimer: () => void;
-  onRemoveProbe: () => void;
-  onHumidityChange: (value: number) => void;
-  onFanSpeedChange: (value: number) => void;
-  onProbeTargetChange: (value: number) => void;
-  onCustomTimerChange: (hours: number, minutes: number) => void;
-  tempHistory: Array<{
-    time: string;
-    ovenTemp: number;
-    humidity: number;
-    foodTemp: number;
-  }>;
-}
+  // Oven state atoms
+  const [isRunning, setIsRunning] = useAtom(isRunningAtom);
+  const [currentTemp] = useAtom(currentTempAtom);
+  const [targetTemp, setTargetTemp] = useAtom(targetTempAtom);
+  const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
+  const [humidity] = useAtom(humidityAtom);
+  const [targetHumidity, setTargetHumidity] = useAtom(targetHumidityAtom);
+  const [fanSpeed, setFanSpeed] = useAtom(fanSpeedAtom);
+  const [ingredientTemp] = useAtom(ingredientTempAtom);
+  const [currentPhase] = useAtom(currentPhaseAtom);
+  const [totalPhases] = useAtom(totalPhasesAtom);
+  const [phaseName] = useAtom(phaseNameAtom);
+  const [cookingMode, setCookingMode] = useAtom(cookingModeAtom);
+  const [probeTargetTemp, setProbeTargetTemp] = useAtom(probeTargetTempAtom);
+  const [customTimer, setCustomTimer] = useAtom(customTimerAtom);
+  const [tempHistory] = useAtom(tempHistoryAtom);
 
-export function OvenDashboard({
-  currentTemp,
-  targetTemp,
-  timeRemaining,
-  humidity,
-  targetHumidity,
-  fanSpeed,
-  ingredientTemp,
-  isRunning,
-  currentPhase,
-  totalPhases,
-  phaseName,
-  cookingMode,
-  probeTargetTemp,
-  customTimer,
-  onToggleRunning,
-  onOpenSettings,
-  onOpenRecipes,
-  onTempAdjust,
-  onAddTimer,
-  onAddProbe,
-  onRemoveTimer,
-  onRemoveProbe,
-  onHumidityChange,
-  onFanSpeedChange,
-  onProbeTargetChange,
-  onCustomTimerChange,
-  tempHistory,
-}: OvenDashboardProps) {
+  // Handler functions
+  const handleToggleRunning = () => {
+    if (!isRunning && cookingMode === null) {
+      // This will be handled by the parent component's toast
+      return;
+    }
+    setIsRunning(!isRunning);
+  };
+
+  const handleTempAdjust = (delta: number) => {
+    const newTemp = Math.max(50, Math.min(300, targetTemp + delta));
+    setTargetTemp(newTemp);
+  };
+
+  const handleAddTimer = () => {
+    setCookingMode("timer");
+    const totalMinutes = customTimer.hours * 60 + customTimer.minutes;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    setTimeRemaining(`${hours}:${minutes.toString().padStart(2, "0")}:00`);
+  };
+
+  const handleAddProbe = () => {
+    setCookingMode("probe");
+  };
+
+  const handleRemoveTimer = () => {
+    setCookingMode(null);
+    setTimeRemaining("0:00:00");
+  };
+
+  const handleRemoveProbe = () => {
+    setCookingMode(null);
+  };
+
+  const handleHumidityChange = (value: number) => {
+    setTargetHumidity(value);
+  };
+
+  const handleFanSpeedChange = (value: number) => {
+    setFanSpeed(value);
+  };
+
+  const handleProbeTargetChange = (value: number) => {
+    setProbeTargetTemp(value);
+  };
+
+  const handleCustomTimerChange = (hours: number, minutes: number) => {
+    setCustomTimer({ hours, minutes });
+  };
+
+  // Computed values
   const tempProgress = Math.min((currentTemp / targetTemp) * 100, 100);
   const isHeating = currentTemp < targetTemp && isRunning;
   const phaseProgress =
@@ -110,7 +135,7 @@ export function OvenDashboard({
           <Button
             variant="outline"
             size="sm"
-            onClick={onOpenRecipes}
+            onClick={() => setCurrentView("recipes")}
             className="rounded-xl px-3 border-2"
           >
             <BookOpen className="w-4 h-4" />
@@ -118,7 +143,7 @@ export function OvenDashboard({
           <Button
             variant="outline"
             size="sm"
-            onClick={onOpenSettings}
+            onClick={() => setCurrentView("settings")}
             className="rounded-xl px-3 border-2"
           >
             <Settings className="w-4 h-4" />
@@ -314,7 +339,7 @@ export function OvenDashboard({
             <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
               <Button
                 size="lg"
-                onClick={onToggleRunning}
+                onClick={handleToggleRunning}
                 className={`w-14 h-14 rounded-full shadow-lg border-2 border-white text-white transition-all duration-300 ${
                   isRunning
                     ? "bg-red-500 hover:bg-red-600 scale-105"
@@ -340,7 +365,7 @@ export function OvenDashboard({
           {cookingMode === null && (
             <div className="grid grid-cols-2 gap-2">
               <Button
-                onClick={onAddTimer}
+                onClick={handleAddTimer}
                 className="h-10 rounded-xl gap-2 text-xs"
                 variant="outline"
               >
@@ -348,7 +373,7 @@ export function OvenDashboard({
                 Timer
               </Button>
               <Button
-                onClick={onAddProbe}
+                onClick={handleAddProbe}
                 className="h-10 rounded-xl gap-2 text-xs"
                 variant="outline"
               >
@@ -365,7 +390,7 @@ export function OvenDashboard({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={onRemoveTimer}
+                  onClick={handleRemoveTimer}
                   className="w-6 h-6 rounded-full p-0"
                 >
                   <X className="w-3 h-3" />
@@ -383,7 +408,7 @@ export function OvenDashboard({
                     <Slider
                       value={[customTimer.hours]}
                       onValueChange={([value]) =>
-                        onCustomTimerChange(value, customTimer.minutes)
+                        handleCustomTimerChange(value, customTimer.minutes)
                       }
                       min={0}
                       max={12}
@@ -401,7 +426,7 @@ export function OvenDashboard({
                     <Slider
                       value={[customTimer.minutes]}
                       onValueChange={([value]) =>
-                        onCustomTimerChange(customTimer.hours, value)
+                        handleCustomTimerChange(customTimer.hours, value)
                       }
                       min={0}
                       max={59}
@@ -424,7 +449,7 @@ export function OvenDashboard({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={onRemoveProbe}
+                  onClick={handleRemoveProbe}
                   className="w-6 h-6 rounded-full p-0"
                 >
                   <X className="w-3 h-3" />
@@ -440,7 +465,7 @@ export function OvenDashboard({
                   </label>
                   <Slider
                     value={[probeTargetTemp]}
-                    onValueChange={([value]) => onProbeTargetChange(value)}
+                    onValueChange={([value]) => handleProbeTargetChange(value)}
                     min={40}
                     max={100}
                     step={1}
@@ -475,7 +500,9 @@ export function OvenDashboard({
             <div>
               <Slider
                 value={[targetTemp]}
-                onValueChange={([value]) => onTempAdjust(value - targetTemp)}
+                onValueChange={([value]) =>
+                  handleTempAdjust(value - targetTemp)
+                }
                 min={50}
                 max={300}
                 step={5}
@@ -508,7 +535,7 @@ export function OvenDashboard({
             <div>
               <Slider
                 value={[targetHumidity]}
-                onValueChange={([value]) => onHumidityChange(value)}
+                onValueChange={([value]) => handleHumidityChange(value)}
                 min={0}
                 max={100}
                 step={5}
@@ -538,7 +565,7 @@ export function OvenDashboard({
             <div>
               <Slider
                 value={[fanSpeed]}
-                onValueChange={([value]) => onFanSpeedChange(value)}
+                onValueChange={([value]) => handleFanSpeedChange(value)}
                 min={0}
                 max={100}
                 step={10}

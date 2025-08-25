@@ -9,13 +9,14 @@ import {
   type EnhancedRecipe,
   recipeSearchTermAtom,
   recipeSelectedCategoryAtom,
+  currentViewAtom,
+  selectedRecipeAtom,
+  viewingRecipeAtom,
+  currentPhaseAtom,
+  targetTempAtom,
+  timeRemainingAtom,
+  cookingModeAtom,
 } from "../store/atoms";
-
-interface RecipeSelectorProps {
-  onSelectRecipe: (recipe: EnhancedRecipe) => void;
-  onViewRecipe: (recipe: EnhancedRecipe) => void;
-  onBack: () => void;
-}
 
 const sampleRecipes: EnhancedRecipe[] = [
   {
@@ -231,15 +232,45 @@ const categories = [
   { id: "pizza", name: "Pizza", emoji: "🍕" },
 ];
 
-export function RecipeSelector({
-  onSelectRecipe,
-  onViewRecipe,
-  onBack,
-}: RecipeSelectorProps) {
+export function RecipeSelector() {
+  // Navigation atoms
+  const [, setCurrentView] = useAtom(currentViewAtom);
+  const [, setSelectedRecipe] = useAtom(selectedRecipeAtom);
+  const [, setViewingRecipe] = useAtom(viewingRecipeAtom);
+  const [, setCurrentPhase] = useAtom(currentPhaseAtom);
+  const [, setTargetTemp] = useAtom(targetTempAtom);
+  const [, setTimeRemaining] = useAtom(timeRemainingAtom);
+  const [, setCookingMode] = useAtom(cookingModeAtom);
   const [searchTerm, setSearchTerm] = useAtom(recipeSearchTermAtom);
   const [selectedCategory, setSelectedCategory] = useAtom(
     recipeSelectedCategoryAtom
   );
+
+  // Handler functions
+  const handleSelectRecipe = (recipe: EnhancedRecipe) => {
+    setSelectedRecipe(recipe);
+    setCurrentPhase(0);
+
+    // Set initial phase parameters
+    if (recipe.phases.length > 0) {
+      setTargetTemp(recipe.phases[0].temperature);
+    }
+
+    // Convert total cook time to timer format
+    const hours = Math.floor(recipe.totalTime / 60);
+    const minutes = recipe.totalTime % 60;
+    setTimeRemaining(`${hours}:${minutes.toString().padStart(2, "0")}:00`);
+
+    // Auto-select timer mode for recipes
+    setCookingMode("timer");
+
+    setCurrentView("dashboard");
+  };
+
+  const handleViewRecipe = (recipe: EnhancedRecipe) => {
+    setViewingRecipe(recipe);
+    setCurrentView("recipe-details");
+  };
 
   const filteredRecipes = sampleRecipes.filter((recipe) => {
     const matchesSearch = recipe.name
@@ -272,7 +303,7 @@ export function RecipeSelector({
         <Button
           variant="outline"
           size="sm"
-          onClick={onBack}
+          onClick={() => setCurrentView("dashboard")}
           className="w-10 h-10 rounded-full border-2 p-0"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -321,8 +352,8 @@ export function RecipeSelector({
                 <CompactRecipeCard
                   key={recipe.id}
                   recipe={recipe}
-                  onSelect={onSelectRecipe}
-                  onView={onViewRecipe}
+                  onSelect={handleSelectRecipe}
+                  onView={handleViewRecipe}
                   getDifficultyColor={getDifficultyColor}
                 />
               ))}
@@ -342,8 +373,8 @@ export function RecipeSelector({
               <CompactRecipeCard
                 key={recipe.id}
                 recipe={recipe}
-                onSelect={onSelectRecipe}
-                onView={onViewRecipe}
+                onSelect={handleSelectRecipe}
+                onView={handleViewRecipe}
                 getDifficultyColor={getDifficultyColor}
               />
             ))}

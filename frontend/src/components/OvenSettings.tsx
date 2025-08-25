@@ -21,14 +21,15 @@ import {
   Zap,
   Wind,
 } from "lucide-react";
-import { ovenSettingsAtom, type OvenSettings } from "../store/atoms";
+import {
+  ovenSettingsAtom,
+  type OvenSettings,
+  currentViewAtom,
+} from "../store/atoms";
 
-interface OvenSettingsProps {
-  onBack: () => void;
-  onSave: (settings: Record<string, unknown>) => void;
-}
-
-export function OvenSettings({ onBack, onSave }: OvenSettingsProps) {
+export function OvenSettings() {
+  // Navigation atoms
+  const [, setCurrentView] = useAtom(currentViewAtom);
   const [settings, setSettings] = useAtom(ovenSettingsAtom);
 
   const handleSettingChange = (key: string, value: unknown) => {
@@ -70,7 +71,7 @@ export function OvenSettings({ onBack, onSave }: OvenSettingsProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={onBack}
+            onClick={() => setCurrentView("dashboard")}
             className="w-10 h-10 rounded-full border-2 p-0"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -90,7 +91,7 @@ export function OvenSettings({ onBack, onSave }: OvenSettingsProps) {
           </Button>
           <Button
             size="sm"
-            onClick={() => onSave(settings)}
+            onClick={() => setCurrentView("dashboard")}
             className="rounded-xl px-3 text-xs"
           >
             <Save className="w-3 h-3 mr-1" />
