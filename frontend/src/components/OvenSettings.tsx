@@ -21,18 +21,18 @@ import {
   Zap,
   Wind,
 } from "lucide-react";
-import { thermomixSettingsAtom, type ThermomixSettings } from "../store/atoms";
+import { ovenSettingsAtom, type OvenSettings } from "../store/atoms";
 
-interface ThermomixSettingsProps {
+interface OvenSettingsProps {
   onBack: () => void;
   onSave: (settings: Record<string, unknown>) => void;
 }
 
-export function ThermomixSettings({ onBack, onSave }: ThermomixSettingsProps) {
-  const [settings, setSettings] = useAtom(thermomixSettingsAtom);
+export function OvenSettings({ onBack, onSave }: OvenSettingsProps) {
+  const [settings, setSettings] = useAtom(ovenSettingsAtom);
 
   const handleSettingChange = (key: string, value: unknown) => {
-    setSettings((prev: ThermomixSettings) => ({
+    setSettings((prev: OvenSettings) => ({
       ...prev,
       [key]: value,
     }));

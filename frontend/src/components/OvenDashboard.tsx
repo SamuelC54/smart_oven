@@ -20,7 +20,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 
 type CookingMode = "timer" | "probe" | null;
 
-interface EnhancedThermomixDashboardProps {
+interface OvenDashboardProps {
   currentTemp: number;
   targetTemp: number;
   timeRemaining: string;
@@ -56,7 +56,7 @@ interface EnhancedThermomixDashboardProps {
   }>;
 }
 
-export function EnhancedThermomixDashboard({
+export function OvenDashboard({
   currentTemp,
   targetTemp,
   timeRemaining,
@@ -84,7 +84,7 @@ export function EnhancedThermomixDashboard({
   onProbeTargetChange,
   onCustomTimerChange,
   tempHistory,
-}: EnhancedThermomixDashboardProps) {
+}: OvenDashboardProps) {
   const tempProgress = Math.min((currentTemp / targetTemp) * 100, 100);
   const isHeating = currentTemp < targetTemp && isRunning;
   const phaseProgress =
@@ -249,8 +249,8 @@ export function EnhancedThermomixDashboard({
                           ? "text-green-500"
                           : "text-orange-500"
                         : isHeating
-                        ? "text-orange-500"
-                        : "text-green-500"
+                          ? "text-orange-500"
+                          : "text-green-500"
                     }`}
                   />
                 </svg>
@@ -286,10 +286,10 @@ export function EnhancedThermomixDashboard({
                         ? "bg-green-100 text-green-600"
                         : "bg-orange-100 text-orange-600"
                       : isHeating
-                      ? "bg-orange-100 text-orange-600"
-                      : currentTemp >= targetTemp
-                      ? "bg-green-100 text-green-600"
-                      : "bg-gray-100 text-gray-600"
+                        ? "bg-orange-100 text-orange-600"
+                        : currentTemp >= targetTemp
+                          ? "bg-green-100 text-green-600"
+                          : "bg-gray-100 text-gray-600"
                   }`}
                 >
                   {cookingMode === "probe"
@@ -297,10 +297,10 @@ export function EnhancedThermomixDashboard({
                       ? "Ready"
                       : "Cooking"
                     : isHeating
-                    ? "Heating..."
-                    : currentTemp >= targetTemp
-                    ? "Ready"
-                    : "Standby"}
+                      ? "Heating..."
+                      : currentTemp >= targetTemp
+                        ? "Ready"
+                        : "Standby"}
                 </div>
               </div>
 

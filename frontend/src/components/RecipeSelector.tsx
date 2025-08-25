@@ -7,11 +7,11 @@ import { Search, Clock, Users, Star, ArrowLeft, Eye } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import {
   type EnhancedRecipe,
-  thermomixSearchTermAtom,
-  thermomixSelectedCategoryAtom,
+  recipeSearchTermAtom,
+  recipeSelectedCategoryAtom,
 } from "../store/atoms";
 
-interface ThermomixRecipeSelectorProps {
+interface RecipeSelectorProps {
   onSelectRecipe: (recipe: EnhancedRecipe) => void;
   onViewRecipe: (recipe: EnhancedRecipe) => void;
   onBack: () => void;
@@ -231,14 +231,14 @@ const categories = [
   { id: "pizza", name: "Pizza", emoji: "🍕" },
 ];
 
-export function ThermomixRecipeSelector({
+export function RecipeSelector({
   onSelectRecipe,
   onViewRecipe,
   onBack,
-}: ThermomixRecipeSelectorProps) {
-  const [searchTerm, setSearchTerm] = useAtom(thermomixSearchTermAtom);
+}: RecipeSelectorProps) {
+  const [searchTerm, setSearchTerm] = useAtom(recipeSearchTermAtom);
   const [selectedCategory, setSelectedCategory] = useAtom(
-    thermomixSelectedCategoryAtom
+    recipeSelectedCategoryAtom
   );
 
   const filteredRecipes = sampleRecipes.filter((recipe) => {

@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { useAtom } from "jotai";
-import { EnhancedThermomixDashboard } from "./components/EnhancedThermomixDashboard";
-import { ThermomixRecipeSelector } from "./components/ThermomixRecipeSelector";
+import { OvenDashboard } from "./components/OvenDashboard";
+import { RecipeSelector } from "./components/RecipeSelector";
 import { RecipeDetails } from "./components/RecipeDetails";
-import { ThermomixSettings } from "./components/ThermomixSettings";
+import { OvenSettings } from "./components/OvenSettings";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import {
@@ -348,7 +348,7 @@ export default function App() {
     return (
       <div className={containerClass}>
         <Toaster position="top-center" />
-        <ThermomixRecipeSelector
+        <RecipeSelector
           onSelectRecipe={handleSelectRecipe}
           onViewRecipe={handleViewRecipe}
           onBack={() => setCurrentView("dashboard")}
@@ -374,7 +374,7 @@ export default function App() {
     return (
       <div className={containerClass}>
         <Toaster position="top-center" />
-        <ThermomixSettings
+        <OvenSettings
           onBack={() => setCurrentView("dashboard")}
           onSave={handleSaveSettings}
         />
@@ -385,7 +385,7 @@ export default function App() {
   return (
     <div className={containerClass}>
       <Toaster position="top-center" />
-      <EnhancedThermomixDashboard
+      <OvenDashboard
         currentTemp={currentTemp}
         targetTemp={targetTemp}
         timeRemaining={timeRemaining}

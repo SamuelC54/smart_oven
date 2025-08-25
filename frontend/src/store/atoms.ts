@@ -1,10 +1,10 @@
 import { atom } from "jotai";
 
 // Types
-type View = "dashboard" | "recipes" | "recipe-details" | "settings";
-type CookingMode = "timer" | "probe" | null;
+export type View = "dashboard" | "recipes" | "recipe-details" | "settings";
+export type CookingMode = "timer" | "probe" | null;
 
-interface RecipePhase {
+export interface RecipePhase {
   id: string;
   name: string;
   description: string;
@@ -15,7 +15,7 @@ interface RecipePhase {
   icon: string;
 }
 
-interface EnhancedRecipe {
+export interface EnhancedRecipe {
   id: string;
   name: string;
   category: string;
@@ -31,19 +31,19 @@ interface EnhancedRecipe {
   tips: string[];
 }
 
-interface TempHistoryEntry {
+export interface TempHistoryEntry {
   time: string;
   ovenTemp: number;
   humidity: number;
   foodTemp: number;
 }
 
-interface CustomTimer {
+export interface CustomTimer {
   hours: number;
   minutes: number;
 }
 
-export interface ThermomixSettings {
+export interface OvenSettings {
   temperatureUnit: "celsius" | "fahrenheit";
   preheating: boolean;
   alertSound: boolean;
@@ -85,8 +85,8 @@ export const cookingModeAtom = atom<CookingMode>(null);
 export const probeTargetTempAtom = atom(75);
 export const customTimerAtom = atom<CustomTimer>({ hours: 1, minutes: 30 });
 
-// Thermomix settings atom
-export const thermomixSettingsAtom = atom<ThermomixSettings>({
+// Oven settings atom
+export const ovenSettingsAtom = atom<OvenSettings>({
   temperatureUnit: "celsius",
   preheating: true,
   alertSound: true,
@@ -100,9 +100,9 @@ export const thermomixSettingsAtom = atom<ThermomixSettings>({
   nightMode: false,
 });
 
-// Thermomix recipe selector atoms
-export const thermomixSearchTermAtom = atom("");
-export const thermomixSelectedCategoryAtom = atom("all");
+// Recipe selector atoms
+export const recipeSearchTermAtom = atom("");
+export const recipeSelectedCategoryAtom = atom("all");
 
 // Recipe details atoms
 export const selectedPhaseAtom = atom<number>(0);
