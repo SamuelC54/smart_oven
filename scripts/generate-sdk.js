@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
-const { execSync } = require("child_process");
-const fs = require("fs");
-const path = require("path");
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import { config } from "dotenv";
 
 // Load environment variables from root directory
-require("dotenv").config({ path: "../.env" });
+config({ path: "../.env" });
 
 const API_URL =
   process.env.API_URL?.replace(/\/$/, "") || "http://localhost:8081";
@@ -41,7 +42,7 @@ try {
 console.log("⚙️  Generating TypeScript SDK from OpenAPI specification...");
 try {
   execSync(
-    `npx openapi-generator-cli generate -i ${OPENAPI_URL} -g typescript-axios -o ./generated --additional-properties=npmName=smart-oven-api-sdk,npmVersion=1.0.0,supportsES6=true,withSeparateModelsAndApi=true,modelPackage=models,apiPackage=api`,
+    `npx openapi-generator-cli generate -i ${OPENAPI_URL} -g typescript-axios -o ./generated`,
     {
       stdio: "inherit",
     }

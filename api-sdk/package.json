@@ -1,12 +1,20 @@
 {
   "name": "smart-oven-api-sdk",
   "version": "1.0.0",
+  "type": "module",
   "description": "TypeScript SDK for Smart Oven API generated from OpenAPI specification",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
-    "generate": "node -e \"require('dotenv').config({path:'../.env'}); const url = (process.env.API_URL || 'http://localhost:8081').replace(/\\/$/, ''); require('child_process').execSync(`openapi-generator-cli generate -i ${url}/openapi.json -g typescript-axios -o ./generated`, {stdio: 'inherit'});\"",
-    "generate-sdk": "node scripts/generate-sdk.js",
+    "generate": "npx openapi-generator-cli generate -i http://192.168.0.71:8081/openapi.json -g typescript-axios -o ./generated",
+    "generate-sdk": "node scripts/generate-sdk.mjs",
     "build": "npm run generate && npm run compile",
     "compile": "tsc",
     "clean": "rimraf generated dist",
