@@ -32,6 +32,38 @@ The project includes several tools for maintaining code quality:
 
 For detailed information about dead code analysis, see [frontend/DEADCODE.md](frontend/DEADCODE.md).
 
+### API SDK (TypeScript)
+
+Generate a TypeScript SDK from the FastAPI OpenAPI specification:
+
+```bash
+cd api-sdk
+npm install
+npm run generate-sdk
+```
+
+The SDK provides type-safe API clients for:
+
+- Temperature monitoring
+- GPIO control
+- System health checks
+- Debug and diagnostics
+
+See [api-sdk/README.md](api-sdk/README.md) for detailed usage examples.
+
+### Environment Configuration
+
+Environment variables are now centralized in the root directory:
+
+- **`.env`** - Local development settings
+- **`.env.example`** - Example environment file
+
+The API URL is configured with:
+
+- `API_URL` - Used by API SDK generation
+- `VITE_API_URL` - Used by frontend (Vite requires VITE\_ prefix)
+- Both variables should have the same value for consistency
+
 ---
 
 # Raspberry Pi Deployment Setup (With Github runner)
