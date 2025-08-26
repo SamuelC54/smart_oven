@@ -140,3 +140,6 @@ vite.config.ts.timestamp-*
 
 # Tanstack router cache
 .tanstack/
+
+# Run directory
+run/

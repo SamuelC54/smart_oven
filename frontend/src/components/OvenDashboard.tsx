@@ -35,7 +35,7 @@ import {
   tempHistoryAtom,
 } from "../store/atoms";
 import { useNavigate } from "@tanstack/react-router";
-import { useTemperature, useSetTemperature } from "../services/temperature";
+import { useTemperature } from "../services/useTemperature";
 
 export function OvenDashboard() {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export function OvenDashboard() {
     error: tempError,
   } = useTemperature();
 
-  const setTempMutation = useSetTemperature();
+  // Note: Temperature setting removed - current API uses GPIO control
 
   // Oven state atoms
   const [isRunning, setIsRunning] = useAtom(isRunningAtom);
@@ -84,7 +84,8 @@ export function OvenDashboard() {
 
   const handleTempAdjust = (delta: number) => {
     const newTemp = Math.max(50, Math.min(300, realTargetTemp + delta));
-    setTempMutation.mutate(newTemp);
+    // TODO: Implement temperature setting via GPIO control
+    console.log("Temperature adjust requested:", newTemp);
   };
 
   const handleAddTimer = () => {
@@ -528,17 +529,13 @@ export function OvenDashboard() {
                 max={300}
                 step={5}
                 className="h-1 mb-2"
-                disabled={setTempMutation.isPending}
+                disabled={false}
               />
               <div className="flex justify-between text-xs text-gray-500">
                 <span>50°C</span>
                 <span>300°C</span>
               </div>
-              {setTempMutation.isPending && (
-                <div className="text-xs text-gray-500 text-center mt-1">
-                  Updating...
-                </div>
-              )}
+              {/* Temperature updating indicator removed */}
             </div>
           )}
         </Card>
