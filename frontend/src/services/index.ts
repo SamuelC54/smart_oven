@@ -1,12 +1,7 @@
-// Export all services
-export * from "./useRoot";
-export * from "./useHealth";
-export * from "./useCorsTest";
-export * from "./useTemperature";
-export * from "./useSensorDebug";
-export * from "./useGpioStatus";
-export * from "./useSetGpio";
-export * from "./useGpioTest";
-export * from "./useDebugInfo";
-export * from "./useDebugMax31865";
-export * from "./useSpiTest";
+// Export all services organized by type
+
+// API services (hardware/oven control)
+export * from "./api";
+
+// Database services (recipes, sessions, settings)
+export * from "./db";

@@ -55,7 +55,7 @@ See [api-sdk/README.md](api-sdk/README.md) for detailed usage examples.
 
 Environment variables are now centralized in the root directory:
 
-- **`.env`** - Local development settings
+- **`.env.local`** - Local development settings
 - **`.env.example`** - Example environment file
 
 The API URL is configured with:
