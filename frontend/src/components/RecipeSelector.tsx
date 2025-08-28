@@ -17,7 +17,9 @@ import {
   cookingModeAtom,
 } from "../store/atoms";
 import { useNavigate } from "@tanstack/react-router";
+import { useRecipes, useSearchRecipes } from "../services/db/useRecipes";
 
+// Fallback sample recipes if database is empty
 const sampleRecipes: EnhancedRecipe[] = [
   {
     id: "1",
@@ -245,6 +247,14 @@ export function RecipeSelector() {
     recipeSelectedCategoryAtom
   );
 
+  // Use database services
+  const dbRecipes = useRecipes({
+    category: selectedCategory === "all" ? undefined : selectedCategory,
+    limit: 50,
+  });
+
+  const searchResults = useSearchRecipes(searchTerm, 20);
+
   // Handler functions
   const handleSelectRecipe = (recipe: EnhancedRecipe) => {
     setSelectedRecipe(recipe);
@@ -271,16 +281,39 @@ export function RecipeSelector() {
     navigate({ to: "/recipe-details" });
   };
 
-  const filteredRecipes = sampleRecipes.filter((recipe) => {
-    const matchesSearch = recipe.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "all" || recipe.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Use database recipes if available, fallback to sample recipes
+  const recipes = dbRecipes || sampleRecipes;
+  const searchRecipes = searchResults || [];
 
-  const favoriteRecipes = sampleRecipes.filter((recipe) => recipe.isFavorite);
+  // Convert database recipes to EnhancedRecipe format if needed
+  const normalizedRecipes =
+    recipes?.map((recipe) =>
+      "_id" in recipe
+        ? ({ ...recipe, id: recipe._id } as unknown as EnhancedRecipe)
+        : recipe
+    ) || sampleRecipes;
+
+  const normalizedSearchRecipes =
+    searchRecipes?.map((recipe) =>
+      "_id" in recipe
+        ? ({ ...recipe, id: recipe._id } as unknown as EnhancedRecipe)
+        : recipe
+    ) || [];
+
+  const filteredRecipes = searchTerm
+    ? normalizedSearchRecipes
+    : normalizedRecipes.filter((recipe: EnhancedRecipe) => {
+        const matchesSearch = recipe.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        const matchesCategory =
+          selectedCategory === "all" || recipe.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      });
+
+  const favoriteRecipes = normalizedRecipes.filter(
+    (recipe: EnhancedRecipe) => recipe.isFavorite
+  );
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

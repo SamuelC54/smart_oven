@@ -35,7 +35,7 @@ import {
   tempHistoryAtom,
 } from "../store/atoms";
 import { useNavigate } from "@tanstack/react-router";
-import { useTemperature } from "../services/useTemperature";
+import { useTemperature } from "../services/api/useOvenApi";
 
 export function OvenDashboard() {
   const navigate = useNavigate();

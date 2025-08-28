@@ -1,26 +1,15 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import {
-  healthApi,
-  temperatureGetApi,
-  gpioStatusApi,
-  gpioSetApi,
-  sensorDebugApi,
-  debugMax31865Api,
-  spiTestApi,
-  gpioTestApi,
-  corsTestApi,
-  debugInfoApi,
-  logsApi,
-  rootApi,
-} from "../../clients/smart-oven-api";
+
+// Base API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 
 // Health check
 export const useHealth = () => {
   return useQuery({
     queryKey: ["health"],
     queryFn: async () => {
-      const response = await healthApi.healthHealthGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/health`);
+      return response.json();
     },
   });
 };
@@ -30,8 +19,8 @@ export const useTemperature = () => {
   return useQuery({
     queryKey: ["temperature"],
     queryFn: async () => {
-      const response = await temperatureGetApi.temperatureGetGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/temperature`);
+      return response.json();
     },
     refetchInterval: 5000, // Refetch every 5 seconds
   });
@@ -42,8 +31,8 @@ export const useGpioStatus = () => {
   return useQuery({
     queryKey: ["gpio-status"],
     queryFn: async () => {
-      const response = await gpioStatusApi.gpioStatusGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/gpio/status`);
+      return response.json();
     },
   });
 };
@@ -52,19 +41,28 @@ export const useGpioStatus = () => {
 export const useSetGpio = () => {
   return useMutation({
     mutationFn: async (data: { pin: number; state: boolean }) => {
-      const response = await gpioSetApi.gpioSetPost(data);
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/gpio/set`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      return response.json();
     },
   });
 };
+
+// Note: Debug endpoints are available but using direct fetch for now
+// until the SDK is properly configured
 
 // Sensor debug
 export const useSensorDebug = () => {
   return useQuery({
     queryKey: ["sensor-debug"],
     queryFn: async () => {
-      const response = await sensorDebugApi.sensorDebugGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/sensor/debug`);
+      return response.json();
     },
   });
 };
@@ -74,8 +72,8 @@ export const useDebugMax31865 = () => {
   return useQuery({
     queryKey: ["debug-max31865"],
     queryFn: async () => {
-      const response = await debugMax31865Api.debugMax31865Get();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/debug/max31865`);
+      return response.json();
     },
   });
 };
@@ -85,8 +83,8 @@ export const useSpiTest = () => {
   return useQuery({
     queryKey: ["spi-test"],
     queryFn: async () => {
-      const response = await spiTestApi.spiTestGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/spi/test`);
+      return response.json();
     },
   });
 };
@@ -96,8 +94,8 @@ export const useGpioTest = () => {
   return useQuery({
     queryKey: ["gpio-test"],
     queryFn: async () => {
-      const response = await gpioTestApi.gpioTestGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/gpio/test`);
+      return response.json();
     },
   });
 };
@@ -107,8 +105,8 @@ export const useCorsTest = () => {
   return useQuery({
     queryKey: ["cors-test"],
     queryFn: async () => {
-      const response = await corsTestApi.corsTestGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/cors/test`);
+      return response.json();
     },
   });
 };
@@ -118,8 +116,8 @@ export const useDebugInfo = () => {
   return useQuery({
     queryKey: ["debug-info"],
     queryFn: async () => {
-      const response = await debugInfoApi.debugInfoGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/debug/info`);
+      return response.json();
     },
   });
 };
@@ -129,8 +127,8 @@ export const useLogs = () => {
   return useQuery({
     queryKey: ["logs"],
     queryFn: async () => {
-      const response = await logsApi.logsGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/logs`);
+      return response.json();
     },
   });
 };
@@ -140,8 +138,8 @@ export const useRoot = () => {
   return useQuery({
     queryKey: ["root"],
     queryFn: async () => {
-      const response = await rootApi.rootGet();
-      return response.data;
+      const response = await fetch(`${API_BASE_URL}/`);
+      return response.json();
     },
   });
 };

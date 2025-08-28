@@ -23,32 +23,62 @@ import {
 } from "lucide-react";
 import { ovenSettingsAtom, type OvenSettings } from "../store/atoms";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  useOvenSettings,
+  useUpdateOvenSettings,
+  useResetOvenSettings,
+} from "../services/db/useOvenSettings";
 
 export function OvenSettings() {
   const navigate = useNavigate();
   const [settings, setSettings] = useAtom(ovenSettingsAtom);
 
-  const handleSettingChange = (key: string, value: unknown) => {
+  // Use database services
+  const dbSettings = useOvenSettings("default");
+  const updateSettings = useUpdateOvenSettings();
+  const resetSettings = useResetOvenSettings();
+
+  // Use database settings if available, fallback to local state
+  const currentSettings = dbSettings || settings;
+
+  const handleSettingChange = async (key: string, value: unknown) => {
+    // Update local state immediately for UI responsiveness
     setSettings((prev: OvenSettings) => ({
       ...prev,
       [key]: value,
     }));
+
+    // Update database
+    try {
+      await updateSettings({
+        userId: "default",
+        [key]: value,
+      });
+    } catch (error) {
+      console.error("Failed to update setting:", error);
+    }
   };
 
-  const resetToDefaults = () => {
-    setSettings({
-      temperatureUnit: "celsius",
-      preheating: true,
-      alertSound: true,
-      alertVolume: 75,
-      cookingMode: "conventional",
-      fanSpeed: 50,
-      childLock: false,
-      autoShutoff: true,
-      ovenLight: true,
-      brightness: 80,
-      nightMode: false,
-    });
+  const resetToDefaults = async () => {
+    try {
+      await resetSettings({ userId: "default" });
+      // Reset local state to match database
+      setSettings({
+        temperatureUnit: "celsius",
+        preheating: true,
+        alertSound: true,
+        alertVolume: 75,
+        cookingMode: "conventional",
+        fanSpeed: 50,
+        childLock: false,
+        autoShutoff: true,
+        ovenLight: true,
+        brightness: 80,
+        nightMode: false,
+      });
+    } catch (error) {
+      console.error("Failed to reset settings:", error);
+    }
   };
 
   const cookingModes = [
@@ -111,7 +141,9 @@ export function OvenSettings() {
               <Button
                 key={mode.value}
                 variant={
-                  settings.cookingMode === mode.value ? "default" : "outline"
+                  currentSettings.cookingMode === mode.value
+                    ? "default"
+                    : "outline"
                 }
                 size="sm"
                 onClick={() => handleSettingChange("cookingMode", mode.value)}
@@ -137,7 +169,7 @@ export function OvenSettings() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-700 font-medium">Unit</span>
               <Select
-                value={settings.temperatureUnit}
+                value={currentSettings.temperatureUnit}
                 onValueChange={(value) =>
                   handleSettingChange("temperatureUnit", value)
                 }
@@ -162,7 +194,7 @@ export function OvenSettings() {
                 </p>
               </div>
               <Switch
-                checked={settings.preheating}
+                checked={currentSettings.preheating}
                 onCheckedChange={(checked) =>
                   handleSettingChange("preheating", checked)
                 }
@@ -186,11 +218,11 @@ export function OvenSettings() {
                 Fan Speed
               </span>
               <span className="text-sm font-bold text-blue-600">
-                {settings.fanSpeed}%
+                {currentSettings.fanSpeed}%
               </span>
             </div>
             <Slider
-              value={[settings.fanSpeed]}
+              value={[currentSettings.fanSpeed]}
               onValueChange={([value]) =>
                 handleSettingChange("fanSpeed", value)
               }
@@ -225,25 +257,25 @@ export function OvenSettings() {
                 </p>
               </div>
               <Switch
-                checked={settings.alertSound}
+                checked={currentSettings.alertSound}
                 onCheckedChange={(checked) =>
                   handleSettingChange("alertSound", checked)
                 }
               />
             </div>
 
-            {settings.alertSound && (
+            {currentSettings.alertSound && (
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-700 font-medium">
                     Volume
                   </span>
                   <span className="text-sm font-bold text-green-600">
-                    {settings.alertVolume}%
+                    {currentSettings.alertVolume}%
                   </span>
                 </div>
                 <Slider
-                  value={[settings.alertVolume]}
+                  value={[currentSettings.alertVolume]}
                   onValueChange={([value]) =>
                     handleSettingChange("alertVolume", value)
                   }
@@ -272,11 +304,11 @@ export function OvenSettings() {
                   Brightness
                 </span>
                 <span className="text-sm font-bold text-yellow-600">
-                  {settings.brightness}%
+                  {currentSettings.brightness}%
                 </span>
               </div>
               <Slider
-                value={[settings.brightness]}
+                value={[currentSettings.brightness]}
                 onValueChange={([value]) =>
                   handleSettingChange("brightness", value)
                 }
@@ -294,7 +326,7 @@ export function OvenSettings() {
                 <p className="text-xs text-gray-500">Reduce blue light</p>
               </div>
               <Switch
-                checked={settings.nightMode}
+                checked={currentSettings.nightMode}
                 onCheckedChange={(checked) =>
                   handleSettingChange("nightMode", checked)
                 }
@@ -321,7 +353,7 @@ export function OvenSettings() {
                 <p className="text-xs text-gray-500">Prevent accidents</p>
               </div>
               <Switch
-                checked={settings.childLock}
+                checked={currentSettings.childLock}
                 onCheckedChange={(checked) =>
                   handleSettingChange("childLock", checked)
                 }
@@ -336,7 +368,7 @@ export function OvenSettings() {
                 <p className="text-xs text-gray-500">Auto stop when done</p>
               </div>
               <Switch
-                checked={settings.autoShutoff}
+                checked={currentSettings.autoShutoff}
                 onCheckedChange={(checked) =>
                   handleSettingChange("autoShutoff", checked)
                 }
@@ -351,7 +383,7 @@ export function OvenSettings() {
                 <p className="text-xs text-gray-500">Interior lighting</p>
               </div>
               <Switch
-                checked={settings.ovenLight}
+                checked={currentSettings.ovenLight}
                 onCheckedChange={(checked) =>
                   handleSettingChange("ovenLight", checked)
                 }
