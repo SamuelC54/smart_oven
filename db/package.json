@@ -1,0 +1,32 @@
+{
+  "name": "smart-oven-convex-db",
+  "version": "1.0.0",
+  "description": "Convex database functions for Smart Oven project",
+  "type": "module",
+  "scripts": {
+    "dev": "convex dev --local",
+    "deploy": "convex deploy",
+    "codegen": "convex codegen",
+    "dashboard": "convex dashboard",
+    "logs": "convex logs",
+    "seed": "convex run seedData:seedDatabase",
+    "seed:reset": "convex run seedData:seedDatabase '{\"reset\": true}'",
+    "clean:temp": "convex run temperatureHistory:cleanup '{\"olderThanDays\": 30, \"dryRun\": false}'",
+    "clean:logs": "convex run systemLogs:cleanup '{\"olderThanDays\": 7, \"dryRun\": false}'",
+    "health": "convex run deviceStatus:getSystemHealth",
+    "status": "convex status",
+    "login": "convex login",
+    "logout": "convex logout",
+    "init": "convex init",
+    "import": "convex import",
+    "export": "convex export",
+    "clean": "rm -rf node_modules .convex dist && npm install",
+    "fresh": "npm run clean && npm run codegen"
+  },
+  "dependencies": {
+    "convex": "^1.16.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

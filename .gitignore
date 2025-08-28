@@ -143,3 +143,7 @@ vite.config.ts.timestamp-*
 
 # Run directory
 run/
+
+# Convex generated files
+.convex/
+db/convex/_generated/
