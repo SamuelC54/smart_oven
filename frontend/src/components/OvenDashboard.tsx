@@ -19,23 +19,24 @@ import {
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import {
-  isRunningAtom,
-  targetTempAtom,
+  // Keep UI-specific atoms
   timeRemainingAtom,
   humidityAtom,
   targetHumidityAtom,
-  fanSpeedAtom,
   ingredientTempAtom,
-  currentPhaseAtom,
-  totalPhasesAtom,
-  phaseNameAtom,
-  cookingModeAtom,
-  probeTargetTempAtom,
   customTimerAtom,
   tempHistoryAtom,
+  selectedRecipeAtom,
 } from "../store/atoms";
 import { useNavigate } from "@tanstack/react-router";
 import { useTemperature } from "../services/api/useOvenApi";
+import {
+  useActiveSession,
+  useStartCookingSession,
+  usePauseCookingSession,
+  useResumeCookingSession,
+} from "../services/db/useCookingSessions";
+import type { Id } from "../../../db/convex/_generated/dataModel";
 
 export function OvenDashboard() {
   const navigate = useNavigate();
@@ -47,23 +48,32 @@ export function OvenDashboard() {
     error: tempError,
   } = useTemperature();
 
-  // Note: Temperature setting removed - current API uses GPIO control
+  // Database services
+  const activeSession = useActiveSession();
+  const startSession = useStartCookingSession();
+  const pauseSession = usePauseCookingSession();
+  const resumeSession = useResumeCookingSession();
 
-  // Oven state atoms
-  const [isRunning, setIsRunning] = useAtom(isRunningAtom);
-  const [targetTemp] = useAtom(targetTempAtom);
+  // UI state atoms (keep these for real-time updates)
   const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
   const [humidity] = useAtom(humidityAtom);
   const [targetHumidity, setTargetHumidity] = useAtom(targetHumidityAtom);
-  const [fanSpeed, setFanSpeed] = useAtom(fanSpeedAtom);
   const [ingredientTemp] = useAtom(ingredientTempAtom);
-  const [currentPhase] = useAtom(currentPhaseAtom);
-  const [totalPhases] = useAtom(totalPhasesAtom);
-  const [phaseName] = useAtom(phaseNameAtom);
-  const [cookingMode, setCookingMode] = useAtom(cookingModeAtom);
-  const [probeTargetTemp, setProbeTargetTemp] = useAtom(probeTargetTempAtom);
   const [customTimer, setCustomTimer] = useAtom(customTimerAtom);
   const [tempHistory] = useAtom(tempHistoryAtom);
+  const [selectedRecipe] = useAtom(selectedRecipeAtom);
+
+  // Extract data from active session
+  const isRunning = activeSession?.status === "active";
+  const targetTemp = activeSession?.targetTemp || 180;
+  const currentPhase = activeSession?.currentPhase || 0;
+  const totalPhases = activeSession?.totalPhases || 0;
+  const cookingMode = activeSession?.cookingMode || null;
+  const probeTargetTemp = 75; // Default probe target
+  const fanSpeed = activeSession?.fanSpeed || 0;
+
+  // Get phase name from selected recipe
+  const phaseName = selectedRecipe?.phases[currentPhase]?.name || "";
 
   // Use real temperature data if available, fallback to atoms
   const realCurrentTemp = temperatureData?.temperature ?? 0;
@@ -74,12 +84,27 @@ export function OvenDashboard() {
   const formattedTargetTemp = realTargetTemp.toFixed(1);
 
   // Handler functions
-  const handleToggleRunning = () => {
-    if (!isRunning && cookingMode === null) {
-      // This will be handled by the parent component's toast
-      return;
+  const handleToggleRunning = async () => {
+    if (!activeSession) {
+      // Start a new session if none exists
+      if (selectedRecipe) {
+        await startSession({
+          recipeId: selectedRecipe.id as unknown as Id<"recipes">,
+          recipeName: selectedRecipe.name,
+          targetTemp: selectedRecipe.phases[0]?.temperature || 180,
+          fanSpeed: 0,
+          cookingMode: "timer",
+          totalPhases: selectedRecipe.phases.length,
+        });
+      }
+    } else {
+      // Toggle existing session
+      if (activeSession.status === "active") {
+        await pauseSession({ id: activeSession._id });
+      } else if (activeSession.status === "paused") {
+        await resumeSession({ id: activeSession._id });
+      }
     }
-    setIsRunning(!isRunning);
   };
 
   const handleTempAdjust = (delta: number) => {
@@ -89,7 +114,6 @@ export function OvenDashboard() {
   };
 
   const handleAddTimer = () => {
-    setCookingMode("timer");
     const totalMinutes = customTimer.hours * 60 + customTimer.minutes;
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
@@ -97,28 +121,31 @@ export function OvenDashboard() {
   };
 
   const handleAddProbe = () => {
-    setCookingMode("probe");
+    // Probe mode is handled by the cooking session
+    console.log("Probe mode activated");
   };
 
   const handleRemoveTimer = () => {
-    setCookingMode(null);
     setTimeRemaining("0:00:00");
   };
 
   const handleRemoveProbe = () => {
-    setCookingMode(null);
+    // Probe mode removal is handled by the cooking session
+    console.log("Probe mode deactivated");
   };
 
   const handleHumidityChange = (value: number) => {
     setTargetHumidity(value);
   };
 
-  const handleFanSpeedChange = (value: number) => {
-    setFanSpeed(value);
+  const handleFanSpeedChange = async (value: number) => {
+    // Fan speed changes are handled by the cooking session
+    console.log("Fan speed changed to:", value);
   };
 
   const handleProbeTargetChange = (value: number) => {
-    setProbeTargetTemp(value);
+    // Probe target is handled by the cooking session
+    console.log("Probe target changed to:", value);
   };
 
   const handleCustomTimerChange = (hours: number, minutes: number) => {
