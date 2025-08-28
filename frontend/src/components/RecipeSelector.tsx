@@ -278,7 +278,10 @@ export function RecipeSelector() {
 
   const handleViewRecipe = (recipe: EnhancedRecipe) => {
     setViewingRecipe(recipe);
-    navigate({ to: "/recipe-details" });
+    navigate({
+      to: "/recipes/$recipeId",
+      params: { recipeId: recipe.id },
+    });
   };
 
   // Use database recipes if available, fallback to sample recipes

@@ -2,6 +2,7 @@ import { useAtom } from "jotai";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { useNavigate } from "@tanstack/react-router";
 
 import {
   ArrowLeft,
@@ -17,16 +18,52 @@ import {
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { selectedPhaseAtom, viewingRecipeAtom } from "../store/atoms";
+import { useRecipe } from "../services/db/useRecipes";
+import type { Id } from "../../../db/convex/_generated/dataModel";
 
-export function RecipeDetails() {
+interface RecipeDetailsProps {
+  recipeId?: string;
+}
+
+export function RecipeDetails({ recipeId }: RecipeDetailsProps) {
+  const navigate = useNavigate();
   const [selectedPhase, setSelectedPhase] = useAtom(selectedPhaseAtom);
   const [viewingRecipe] = useAtom(viewingRecipeAtom);
 
-  if (!viewingRecipe) {
-    return <div>Recipe not found</div>;
-  }
+  // Try to get recipe from database first, then fallback to viewing recipe
+  const dbRecipe = useRecipe(recipeId as Id<"recipes"> | null);
 
-  const recipe = viewingRecipe;
+  // Use database recipe if available, otherwise use viewing recipe from state
+  const recipe = dbRecipe || viewingRecipe;
+
+  if (!recipe) {
+    return (
+      <div className="h-full flex flex-col p-3 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="flex items-center gap-3 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate({ to: "/recipes" })}
+            className="w-10 h-10 rounded-full border-2 p-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h1 className="text-xl font-medium text-gray-800">Recipe Details</h1>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-4xl mb-2">🍽️</div>
+            <h3 className="text-lg font-medium text-gray-600 mb-1">
+              Recipe not found
+            </h3>
+            <p className="text-sm text-gray-500">
+              The recipe you're looking for doesn't exist
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -82,7 +119,7 @@ export function RecipeDetails() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.history.back()}
+          onClick={() => navigate({ to: "/recipes" })}
           className="w-10 h-10 rounded-full border-2 p-0"
         >
           <ArrowLeft className="w-4 h-4" />
