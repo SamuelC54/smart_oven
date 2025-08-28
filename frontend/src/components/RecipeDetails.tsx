@@ -17,7 +17,7 @@ import {
   Zap,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { selectedPhaseAtom, viewingRecipeAtom } from "../store/atoms";
+import { selectedPhaseAtom } from "../store/atoms";
 import { useRecipe } from "../services/db/useRecipes";
 import type { Id } from "../../../db/convex/_generated/dataModel";
 
@@ -28,13 +28,9 @@ interface RecipeDetailsProps {
 export function RecipeDetails({ recipeId }: RecipeDetailsProps) {
   const navigate = useNavigate();
   const [selectedPhase, setSelectedPhase] = useAtom(selectedPhaseAtom);
-  const [viewingRecipe] = useAtom(viewingRecipeAtom);
 
-  // Try to get recipe from database first, then fallback to viewing recipe
-  const dbRecipe = useRecipe(recipeId as Id<"recipes"> | null);
-
-  // Use database recipe if available, otherwise use viewing recipe from state
-  const recipe = dbRecipe || viewingRecipe;
+  // Get recipe from database
+  const recipe = useRecipe(recipeId as Id<"recipes"> | null);
 
   if (!recipe) {
     return (

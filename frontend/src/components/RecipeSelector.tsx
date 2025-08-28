@@ -10,7 +10,6 @@ import {
   recipeSearchTermAtom,
   recipeSelectedCategoryAtom,
   selectedRecipeAtom,
-  viewingRecipeAtom,
   currentPhaseAtom,
   targetTempAtom,
   timeRemainingAtom,
@@ -237,7 +236,7 @@ const categories = [
 export function RecipeSelector() {
   const navigate = useNavigate();
   const [, setSelectedRecipe] = useAtom(selectedRecipeAtom);
-  const [, setViewingRecipe] = useAtom(viewingRecipeAtom);
+
   const [, setCurrentPhase] = useAtom(currentPhaseAtom);
   const [, setTargetTemp] = useAtom(targetTempAtom);
   const [, setTimeRemaining] = useAtom(timeRemainingAtom);
@@ -277,7 +276,6 @@ export function RecipeSelector() {
   };
 
   const handleViewRecipe = (recipe: EnhancedRecipe) => {
-    setViewingRecipe(recipe);
     navigate({
       to: "/recipes/$recipeId",
       params: { recipeId: recipe.id },

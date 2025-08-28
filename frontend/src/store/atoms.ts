@@ -43,22 +43,7 @@ export interface CustomTimer {
   minutes: number;
 }
 
-export interface OvenSettings {
-  temperatureUnit: "celsius" | "fahrenheit";
-  preheating: boolean;
-  alertSound: boolean;
-  alertVolume: number;
-  cookingMode: string;
-  fanSpeed: number;
-  childLock: boolean;
-  autoShutoff: boolean;
-  ovenLight: boolean;
-  brightness: number;
-  nightMode: boolean;
-  [key: string]: unknown;
-}
-
-// Oven state
+// UI State Atoms (keep these - not in database)
 export const isRunningAtom = atom(false);
 export const targetTempAtom = atom(180);
 export const timeRemainingAtom = atom("1:30:00");
@@ -67,46 +52,30 @@ export const targetHumidityAtom = atom(50);
 export const fanSpeedAtom = atom(75);
 export const ingredientTempAtom = atom(22);
 
-// Recipe state
+// Recipe UI state (keep these - UI state only)
 export const selectedRecipeAtom = atom<EnhancedRecipe | null>(null);
-export const viewingRecipeAtom = atom<EnhancedRecipe | null>(null);
 export const currentPhaseAtom = atom(0);
 
-// Temperature history
+// Temperature history (keep - real-time data)
 export const tempHistoryAtom = atom<TempHistoryEntry[]>([]);
 
-// Cooking state
+// Cooking state (keep these - UI state only)
 export const cookingStartTimeAtom = atom<Date | null>(null);
 export const cookingModeAtom = atom<CookingMode>(null);
 export const probeTargetTempAtom = atom(75);
 export const customTimerAtom = atom<CustomTimer>({ hours: 1, minutes: 30 });
 
-// Oven settings atom
-export const ovenSettingsAtom = atom<OvenSettings>({
-  temperatureUnit: "celsius",
-  preheating: true,
-  alertSound: true,
-  alertVolume: 75,
-  cookingMode: "conventional",
-  fanSpeed: 50,
-  childLock: false,
-  autoShutoff: true,
-  ovenLight: true,
-  brightness: 80,
-  nightMode: false,
-});
-
-// Recipe selector atoms
+// Recipe selector UI state (keep these - UI state only)
 export const recipeSearchTermAtom = atom("");
 export const recipeSelectedCategoryAtom = atom("all");
 
-// Recipe details atoms
+// Recipe details UI state (keep these - UI state only)
 export const selectedPhaseAtom = atom<number>(0);
 
-// Image fallback atoms
+// Image fallback atoms (keep - UI state only)
 export const imageDidErrorAtom = atom(false);
 
-// Derived atoms for computed values
+// Derived atoms for computed values (keep these - computed from UI state)
 export const totalPhasesAtom = atom((get) => {
   const selectedRecipe = get(selectedRecipeAtom);
   return selectedRecipe?.phases.length || 0;

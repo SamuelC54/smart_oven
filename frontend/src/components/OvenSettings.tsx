@@ -1,4 +1,3 @@
-import { useAtom } from "jotai";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
@@ -21,7 +20,6 @@ import {
   Zap,
   Wind,
 } from "lucide-react";
-import { ovenSettingsAtom, type OvenSettings } from "../store/atoms";
 import { useNavigate } from "@tanstack/react-router";
 import {
   useOvenSettings,
@@ -31,23 +29,28 @@ import {
 
 export function OvenSettings() {
   const navigate = useNavigate();
-  const [settings, setSettings] = useAtom(ovenSettingsAtom);
 
   // Use database services
   const dbSettings = useOvenSettings("default");
   const updateSettings = useUpdateOvenSettings();
   const resetSettings = useResetOvenSettings();
 
-  // Use database settings if available, fallback to local state
-  const currentSettings = dbSettings || settings;
+  // Use database settings if available, fallback to defaults
+  const currentSettings = dbSettings || {
+    temperatureUnit: "celsius" as const,
+    preheating: true,
+    alertSound: true,
+    alertVolume: 75,
+    cookingMode: "conventional",
+    fanSpeed: 50,
+    childLock: false,
+    autoShutoff: true,
+    ovenLight: true,
+    brightness: 80,
+    nightMode: false,
+  };
 
   const handleSettingChange = async (key: string, value: unknown) => {
-    // Update local state immediately for UI responsiveness
-    setSettings((prev: OvenSettings) => ({
-      ...prev,
-      [key]: value,
-    }));
-
     // Update database
     try {
       await updateSettings({
@@ -62,20 +65,6 @@ export function OvenSettings() {
   const resetToDefaults = async () => {
     try {
       await resetSettings({ userId: "default" });
-      // Reset local state to match database
-      setSettings({
-        temperatureUnit: "celsius",
-        preheating: true,
-        alertSound: true,
-        alertVolume: 75,
-        cookingMode: "conventional",
-        fanSpeed: 50,
-        childLock: false,
-        autoShutoff: true,
-        ovenLight: true,
-        brightness: 80,
-        nightMode: false,
-      });
     } catch (error) {
       console.error("Failed to reset settings:", error);
     }
