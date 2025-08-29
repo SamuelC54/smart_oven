@@ -7,13 +7,33 @@ This directory contains the Convex database functions and schema for the Smart O
 ```
 db/
 ├── convex/
-│   ├── schema.ts              # Database schema definition
-│   ├── recipes.ts             # Recipe CRUD operations
-│   ├── seedData.ts            # Sample data seeding
-│   ├── convex.json            # Convex configuration
-│   └── _generated/            # Auto-generated types (don't edit)
-├── package.json               # Dependencies and scripts
-└── README.md                  # This file
+│   ├── schema.ts                 # Database schema definition
+│   ├── seedData.ts               # Sample data seeding
+│   ├── convex.json               # Convex configuration
+│   ├── queries/                  # Database queries (read operations)
+│   │   ├── getCurrentStatus.ts   # Get current device status
+│   │   ├── getSystemHealth.ts    # Get system health overview
+│   │   ├── listRecipes.ts        # List recipes with filtering
+│   │   ├── getRecipe.ts          # Get single recipe by ID
+│   │   ├── searchRecipes.ts      # Search recipes by name/ingredients
+│   │   ├── popularRecipes.ts     # Get popular recipes by rating
+│   │   ├── getActiveCookingSession.ts # Get active cooking session
+│   │   └── getOvenSettings.ts    # Get user oven settings
+│   ├── mutations/                # Database mutations (write operations)
+│   │   ├── updateDeviceStatus.ts # Update device status
+│   │   ├── cleanupDeviceStatus.ts # Cleanup old device data
+│   │   ├── createRecipe.ts       # Create new recipe
+│   │   ├── deleteRecipe.ts       # Delete recipe and phases
+│   │   ├── toggleRecipeFavorite.ts # Toggle recipe favorite status
+│   │   ├── startCookingSession.ts # Start new cooking session
+│   │   └── updateOvenSettings.ts # Update user oven settings
+│   ├── actions/                  # Internal actions (HTTP requests, etc.)
+│   │   └── updateFromAPI.ts      # Sync hardware data from API
+│   ├── crons/                    # Scheduled tasks (cron jobs)
+│   │   └── crons.ts              # Hardware data sync cron job
+│   └── _generated/               # Auto-generated types (don't edit)
+├── package.json                  # Dependencies and scripts
+└── README.md                     # This file
 ```
 
 ## 🚀 Quick Start
@@ -66,6 +86,9 @@ db/
 - **Type safety** - Full TypeScript support
 - **Optimized queries** - Indexed for performance
 - **Scalable** - Built for production use
+- **Modular architecture** - One function per file organized by type
+- **Folder organization** - Queries, mutations, actions, and crons in separate folders
+- **Default exports** - Clean API with `api.folder.functionName.default` pattern
 
 ## 🛠️ Available Scripts
 
@@ -97,51 +120,30 @@ db/
 
 ## 🔧 API Functions
 
-### Recipes
+### Queries (Read Operations)
 
-- `recipes.list()` - Get all recipes with filtering
-- `recipes.get(id)` - Get single recipe with phases
-- `recipes.search(term)` - Search recipes by name/ingredients
-- `recipes.create(data)` - Create new recipe
-- `recipes.update(id, data)` - Update recipe
-- `recipes.toggleFavorite(id)` - Toggle favorite status
-- `recipes.remove(id)` - Delete recipe and phases
-- `recipes.popular()` - Get popular recipes
+- `queries.listRecipes.default(filters?)` - Get all recipes with optional filtering
+- `queries.getRecipe.default(id)` - Get single recipe with phases
+- `queries.searchRecipes.default(term)` - Search recipes by name/ingredients
+- `queries.popularRecipes.default(limit?)` - Get popular recipes by rating
+- `queries.getActiveCookingSession.default()` - Get current active cooking session
+- `queries.getOvenSettings.default(userId)` - Get user oven settings
+- `queries.getCurrentStatus.default(deviceType?)` - Get current device status
+- `queries.getSystemHealth.default()` - Get overall system health summary
 
-### Cooking Sessions
+### Mutations (Write Operations)
 
-- `cookingSessions.getActive()` - Get current active session
-- `cookingSessions.list()` - Get all sessions
-- `cookingSessions.start(data)` - Start new cooking session
-- `cookingSessions.update(id, data)` - Update session
-- `cookingSessions.complete(id)` - Mark session as complete
+- `mutations.createRecipe.default(data)` - Create new recipe with phases
+- `mutations.deleteRecipe.default(id)` - Delete recipe and its phases
+- `mutations.toggleRecipeFavorite.default(id)` - Toggle recipe favorite status
+- `mutations.startCookingSession.default(data)` - Start new cooking session
+- `mutations.updateOvenSettings.default(userId, data)` - Update user oven settings
+- `mutations.updateDeviceStatus.default(data)` - Manually update device status
+- `mutations.cleanupDeviceStatus.default(olderThanHours?)` - Clean old device status entries
 
-### Temperature History
+### Actions (External Interactions)
 
-- `temperatureHistory.getBySession(sessionId)` - Get session data
-- `temperatureHistory.getRecent()` - Get recent readings
-- `temperatureHistory.record(data)` - Record new reading
-- `temperatureHistory.cleanup()` - Clean old data
-
-### Oven Settings
-
-- `ovenSettings.get(userId)` - Get user settings
-- `ovenSettings.update(userId, data)` - Update settings
-- `ovenSettings.reset(userId)` - Reset to defaults
-
-### System Logs
-
-- `systemLogs.list()` - Get all logs
-- `systemLogs.getErrors()` - Get error logs only
-- `systemLogs.add(data)` - Add new log entry
-- `systemLogs.cleanup()` - Clean old logs
-
-### Device Status
-
-- `deviceStatus.getCurrentStatus(deviceType?)` - Get current device status
-- `deviceStatus.getSystemHealth()` - Get overall system health
-- `deviceStatus.updateDeviceStatus(data)` - Manually update device status
-- `deviceStatus.cleanup()` - Clean old device status entries
+- `actions.updateFromAPI.default()` - Internal action to sync hardware data from API (called by cron job)
 
 ### Cron Jobs
 

@@ -7,7 +7,7 @@ const crons = cronJobs();
 crons.interval(
   "fetch hardware data",
   { seconds: 5 },
-  internal.deviceStatus.updateFromAPI
+  internal.convexActions.updateFromAPI.default
 );
 
 export default crons;
