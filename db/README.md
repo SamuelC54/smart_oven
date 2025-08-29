@@ -25,13 +25,23 @@ db/
    npm install
    ```
 
-2. **Start development server:**
+2. **Setup environment (first time only):**
+
+   ```bash
+   npm run setup-env
+   ```
+
+   This creates a `.env.local` file in the parent directory with the API URL configuration.
+
+3. **Start development server:**
 
    ```bash
    npm run dev
    ```
 
-3. **Seed the database:**
+   This automatically reads the API_URL from the parent `.env.local` file and sets it as a Convex environment variable before starting the development server.
+
+4. **Seed the database:**
    ```bash
    npm run seed
    ```
@@ -70,6 +80,7 @@ db/
 - `npm run seed` - Seed database with sample data
 - `npm run seed:reset` - Reset and reseed database
 - `npm run clean:temp` - Clean old temperature data
+- `npm run clean:devices` - Clean old device status data
 - `npm run clean:logs` - Clean old system logs
 
 ### Deployment
@@ -127,9 +138,21 @@ db/
 
 ### Device Status
 
-- `deviceStatus.list()` - Get all device statuses
-- `deviceStatus.update(deviceId, data)` - Update device status
+- `deviceStatus.getCurrentStatus(deviceType?)` - Get current device status
 - `deviceStatus.getSystemHealth()` - Get overall system health
+- `deviceStatus.updateDeviceStatus(data)` - Manually update device status
+- `deviceStatus.cleanup()` - Clean old device status entries
+
+### Cron Jobs
+
+- **Hardware Data Sync** - Fetches hardware data every 5 seconds from API
+  - Updates temperature sensor status
+  - Updates humidity sensor status
+  - Updates fan status
+  - Updates heating element status
+  - Updates probe status
+  - **API Configuration**: Currently hardcoded to `http://localhost:8081`
+  - **Production**: Can be configured via Convex environment variables
 
 ## 🌱 Sample Data
 
@@ -194,6 +217,73 @@ const recipes = await convex.query(api.recipes.list);
 - Input validation on all functions
 - Rate limiting built-in
 - Audit logs for all mutations
+
+## 🌍 Environment Variables
+
+The database functions use environment variables to configure the API URL. The setup is automated for both development and production.
+
+### Automatic Environment Setup
+
+The `npm run dev` command automatically:
+
+1. **Reads** the `API_URL` from the parent `.env.local` file
+2. **Sets** it as a Convex environment variable using `npx convex env set API_URL`
+3. **Starts** the development server
+
+### Configuration Files
+
+- **`.env.local`** (in parent directory): Contains `API_URL=http://localhost:8081`
+- **Convex Environment**: Automatically set from `.env.local` when running `npm run dev`
+
+### Setup Commands
+
+```bash
+# First time setup - creates .env.local file
+npm run setup-env
+
+# Development - automatically sets environment and starts server
+npm run dev
+
+# Manual environment variable setting
+npx convex env set API_URL "http://your-api-url"
+```
+
+### Production Deployment
+
+For production deployment, set the environment variable manually:
+
+```bash
+# Set production API URL
+npx convex env set API_URL "http://your-raspberry-pi-ip:8081"
+
+# Deploy changes
+npm run deploy
+```
+
+### Environment Variable Usage
+
+The `deviceStatus.ts` function uses the environment variable:
+
+```typescript
+const API_BASE_URL = process.env.API_URL || "http://localhost:8081";
+```
+
+### Development Workflow
+
+1. **First time**: Run `npm run setup-env` to create `.env.local`
+2. **Daily development**:
+   - Run `npm run dev` (starts Convex server)
+   - In another terminal, run `npm run dev:with-env` (sets environment variable after server starts)
+3. **API URL changes**: Edit `.env.local` and restart both processes
+
+### Cron Job Data Sources
+
+The `updateFromAPI` cron job uses different data sources:
+
+- **Temperature**: Uses the API SDK (`TemperatureApi.getTempTemperatureGet()`) for real hardware data
+- **Humidity**: Mocked data (45-55% range with timestamp)
+- **GPIO (Fan/Heater)**: Mocked data (random on/off states with realistic values)
+- **Probe**: Mocked data (70% connection chance, 20-100°C temperature range)
 
 ## 📞 Support
 
