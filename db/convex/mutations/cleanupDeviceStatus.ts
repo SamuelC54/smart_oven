@@ -1,12 +1,12 @@
 import { mutation } from "../_generated/server";
 import { v } from "convex/values";
 
-// Cleanup old device status entries (keep last 24 hours)
+// Cleanup old device status entries
 export default mutation({
-  args: { olderThanHours: v.optional(v.number()) },
+  args: { maxAgeMinutes: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const cutoffTime =
-      Date.now() - (args.olderThanHours || 24) * 60 * 60 * 1000;
+    const maxAge = args.maxAgeMinutes ?? 10;
+    const cutoffTime = Date.now() - maxAge * 60 * 1000;
 
     const oldEntries = await ctx.db
       .query("deviceStatus")
