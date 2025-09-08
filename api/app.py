@@ -9,7 +9,6 @@ from hardware import HARDWARE_AVAILABLE
 from routes import (
     root,
     health,
-    cors_test,
     temperature_get,
     sensor_debug,
     gpio_set,
@@ -39,7 +38,6 @@ logger.info(f"Starting Smart Oven API with config: RTD={RTD_NOMINAL}, REF={REF_R
 # Include individual route routers
 app.include_router(root.router, tags=["health"])
 app.include_router(health.router, tags=["health"])
-app.include_router(cors_test.router, tags=["health"])
 app.include_router(temperature_get.router, tags=["temperature"])
 app.include_router(sensor_debug.router, tags=["temperature"])
 app.include_router(gpio_set.router, tags=["gpio"])

@@ -51,11 +51,10 @@ Once running, access the interactive API documentation at:
 
 ### Health & Status
 
-| Method | Endpoint     | Description                       |
-| ------ | ------------ | --------------------------------- |
-| GET    | `/`          | Root endpoint - API status        |
-| GET    | `/health`    | Health check with hardware status |
-| GET    | `/cors-test` | CORS test endpoint                |
+| Method | Endpoint  | Description                       |
+| ------ | --------- | --------------------------------- |
+| GET    | `/`       | Root endpoint - API status        |
+| GET    | `/health` | Health check with hardware status |
 
 ### Temperature
 
@@ -152,7 +151,6 @@ api/
     ├── __init__.py
     ├── root.py         # Root endpoint (/)
     ├── health.py       # Health check endpoint (/health)
-    ├── cors_test.py    # CORS test endpoint (/cors-test)
     ├── temperature_get.py  # Get temperature endpoint (/temperature)
     ├── sensor_debug.py # Sensor debug endpoint (/sensor-debug)
     ├── gpio_set.py     # Set GPIO endpoint (POST /gpio)

@@ -100,17 +100,6 @@ export const useGpioTest = () => {
   });
 };
 
-// CORS test
-export const useCorsTest = () => {
-  return useQuery({
-    queryKey: ["cors-test"],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/cors/test`);
-      return response.json();
-    },
-  });
-};
-
 // Debug info
 export const useDebugInfo = () => {
   return useQuery({
