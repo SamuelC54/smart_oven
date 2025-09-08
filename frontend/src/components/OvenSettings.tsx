@@ -24,8 +24,21 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   useOvenSettings,
   useUpdateOvenSettings,
-  useResetOvenSettings,
 } from "../services/db/useOvenSettings";
+
+const defaultSettings = {
+  temperatureUnit: "celsius" as const,
+  preheating: true,
+  alertSound: true,
+  alertVolume: 75,
+  cookingMode: "conventional",
+  fanSpeed: 50,
+  childLock: false,
+  autoShutoff: true,
+  ovenLight: true,
+  brightness: 80,
+  nightMode: false,
+};
 
 export function OvenSettings() {
   const navigate = useNavigate();
@@ -33,22 +46,9 @@ export function OvenSettings() {
   // Use database services
   const dbSettings = useOvenSettings("default");
   const updateSettings = useUpdateOvenSettings();
-  const resetSettings = useResetOvenSettings();
 
   // Use database settings if available, fallback to defaults
-  const currentSettings = dbSettings || {
-    temperatureUnit: "celsius" as const,
-    preheating: true,
-    alertSound: true,
-    alertVolume: 75,
-    cookingMode: "conventional",
-    fanSpeed: 50,
-    childLock: false,
-    autoShutoff: true,
-    ovenLight: true,
-    brightness: 80,
-    nightMode: false,
-  };
+  const currentSettings = dbSettings || defaultSettings;
 
   const handleSettingChange = async (key: string, value: unknown) => {
     // Update database
@@ -64,7 +64,7 @@ export function OvenSettings() {
 
   const resetToDefaults = async () => {
     try {
-      await resetSettings({ userId: "default" });
+      await updateSettings({ userId: "default", ...defaultSettings });
     } catch (error) {
       console.error("Failed to reset settings:", error);
     }

@@ -33,8 +33,6 @@ import { useTemperature } from "../services/api/useOvenApi";
 import {
   useActiveSession,
   useStartCookingSession,
-  usePauseCookingSession,
-  useResumeCookingSession,
 } from "../services/db/useCookingSessions";
 import type { Id } from "../../../db/convex/_generated/dataModel";
 
@@ -51,8 +49,6 @@ export function OvenDashboard() {
   // Database services
   const activeSession = useActiveSession();
   const startSession = useStartCookingSession();
-  const pauseSession = usePauseCookingSession();
-  const resumeSession = useResumeCookingSession();
 
   // UI state atoms (keep these for real-time updates)
   const [timeRemaining, setTimeRemaining] = useAtom(timeRemainingAtom);
@@ -85,24 +81,25 @@ export function OvenDashboard() {
 
   // Handler functions
   const handleToggleRunning = async () => {
-    if (!activeSession) {
+    if (!activeSession || !selectedRecipe) {
       // Start a new session if none exists
       if (selectedRecipe) {
         await startSession({
           recipeId: selectedRecipe.id as unknown as Id<"recipes">,
-          recipeName: selectedRecipe.name,
+          mode: "timer",
           targetTemp: selectedRecipe.phases[0]?.temperature || 180,
-          fanSpeed: 0,
-          cookingMode: "timer",
           totalPhases: selectedRecipe.phases.length,
         });
       }
     } else {
       // Toggle existing session
       if (activeSession.status === "active") {
-        await pauseSession({ id: activeSession._id });
-      } else if (activeSession.status === "paused") {
-        await resumeSession({ id: activeSession._id });
+        await startSession({
+          recipeId: selectedRecipe.id as unknown as Id<"recipes">,
+          mode: "timer",
+          targetTemp: selectedRecipe.phases[0]?.temperature || 180,
+          totalPhases: selectedRecipe.phases.length,
+        });
       }
     }
   };
