@@ -62,6 +62,13 @@ Once running, access the interactive API documentation at:
 | ------ | -------------- | ------------------------------- |
 | GET    | `/temperature` | Get current temperature reading |
 
+### Oven Control
+
+| Method | Endpoint        | Description                       |
+| ------ | --------------- | --------------------------------- |
+| POST   | `/oven/control` | Turn oven on/off via GPIO pin     |
+| GET    | `/oven/status`  | Get current oven status and state |
+
 ### Debug & Diagnostics
 
 | Method | Endpoint | Description          |
@@ -78,6 +85,10 @@ REF_RESISTOR = 430.0     # Reference resistor value (ohms)
 WIRES = 3                # Number of wires (2, 3, or 4)
 CS_NAME = "CE1"          # Chip select pin name
 ```
+
+### Environment Variables
+
+- `OVEN_GPIO_PIN` - GPIO pin number for oven control (default: 18)
 
 ## Hardware Requirements
 
@@ -141,6 +152,7 @@ api/
     ├── root.py         # Root endpoint (/)
     ├── health.py       # Health check endpoint (/health)
     ├── temperature_get.py  # Get temperature endpoint (/temperature)
+    ├── oven_control.py # Oven control endpoints (/oven/control, /oven/status)
     └── logs.py         # Logs endpoint (/logs)
 ```
 

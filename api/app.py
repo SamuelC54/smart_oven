@@ -10,6 +10,7 @@ from routes import (
     root,
     health,
     temperature_get,
+    oven_control,
     logs
 )
 
@@ -33,6 +34,7 @@ logger.info(f"Starting Smart Oven API with config: RTD={RTD_NOMINAL}, REF={REF_R
 app.include_router(root.router, tags=["health"])
 app.include_router(health.router, tags=["health"])
 app.include_router(temperature_get.router, tags=["temperature"])
+app.include_router(oven_control.router, tags=["oven"])
 app.include_router(logs.router, tags=["debug"])
 
 @app.on_event("startup")
