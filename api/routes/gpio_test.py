@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from hardware import HARDWARE_AVAILABLE, get_sensor
+from hardware import HARDWARE_AVAILABLE, get_sensor, diagnose_gpio_access
 from logger import logger
 from config import CS_NAME, RTD_NOMINAL, REF_RESISTOR, WIRES
 from datetime import datetime
@@ -90,3 +90,22 @@ def test_gpio_access():
             "ref_resistor": REF_RESISTOR
         }
     }
+
+@router.get("/gpio-diagnostics")
+def get_gpio_diagnostics():
+    """Get detailed GPIO diagnostic information"""
+    logger.info("GPIO diagnostics requested")
+    
+    try:
+        diagnostics = diagnose_gpio_access()
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "diagnostics": diagnostics
+        }
+    except Exception as e:
+        logger.error(f"Failed to run GPIO diagnostics: {e}")
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "error": f"Diagnostic failed: {e}",
+            "diagnostics": {"hardware_available": HARDWARE_AVAILABLE}
+        }

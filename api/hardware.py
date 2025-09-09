@@ -132,12 +132,81 @@ def set_gpio(pin: int, state: bool):
         elif pin == 25:
             gpio_pin = board.D25
         else:
-            raise ValueError(f"Unsupported GPIO pin: {pin}")
+            raise ValueError(f"Unsupported GPIO pin: {pin}. Supported pins: 18, 23, 24, 25")
         
+        # Create GPIO object with proper cleanup
         pin_obj = digitalio.DigitalInOut(gpio_pin)
         pin_obj.direction = digitalio.Direction.OUTPUT
         pin_obj.value = state
+        
+        # Clean up the pin object to avoid "busy" errors
+        pin_obj.deinit()
+        
         logger.info(f"GPIO {pin} set to {state}")
+        return True
+        
+    except PermissionError as e:
+        error_msg = f"Permission denied accessing GPIO {pin}. Check if running with proper privileges or if GPIO device is accessible."
+        logger.error(error_msg)
+        raise Exception(error_msg)
+    except OSError as e:
+        if "busy" in str(e).lower():
+            error_msg = f"GPIO {pin} is busy or already in use. Try a different pin or check for conflicting processes."
+        elif "no such file or directory" in str(e).lower():
+            error_msg = f"GPIO {pin} device not found. Check if GPIO hardware is available and properly configured."
+        else:
+            error_msg = f"OS error accessing GPIO {pin}: {e}"
+        logger.error(error_msg)
+        raise Exception(error_msg)
     except Exception as e:
         logger.error(f"Failed to set GPIO {pin}: {e}")
-        raise
+        raise Exception(f"GPIO operation failed: {e}")
+
+def diagnose_gpio_access():
+    """Diagnose GPIO access issues and return detailed information"""
+    diagnostics = {
+        "hardware_available": HARDWARE_AVAILABLE,
+        "circuitpython_available": CIRCUITPYTHON_AVAILABLE,
+        "tests": {}
+    }
+    
+    if not HARDWARE_AVAILABLE:
+        diagnostics["error"] = "Hardware libraries not available"
+        return diagnostics
+    
+    # Test basic imports
+    try:
+        import board, digitalio, busio
+        diagnostics["tests"]["imports"] = "SUCCESS"
+    except Exception as e:
+        diagnostics["tests"]["imports"] = f"FAILED: {e}"
+        return diagnostics
+    
+    # Test board access
+    try:
+        available_pins = [attr for attr in dir(board) if attr.startswith('D')]
+        diagnostics["available_pins"] = available_pins[:10]  # Show first 10
+        diagnostics["tests"]["board_access"] = "SUCCESS"
+    except Exception as e:
+        diagnostics["tests"]["board_access"] = f"FAILED: {e}"
+    
+    # Test GPIO pin creation (without setting values)
+    test_pins = [18, 23, 24, 25]
+    for pin in test_pins:
+        try:
+            if pin == 18:
+                gpio_pin = board.D18
+            elif pin == 23:
+                gpio_pin = board.D23
+            elif pin == 24:
+                gpio_pin = board.D24
+            elif pin == 25:
+                gpio_pin = board.D25
+            
+            pin_obj = digitalio.DigitalInOut(gpio_pin)
+            pin_obj.deinit()  # Clean up immediately
+            diagnostics["tests"][f"pin_{pin}_access"] = "SUCCESS"
+        except Exception as e:
+            diagnostics["tests"][f"pin_{pin}_access"] = f"FAILED: {e}"
+    
+    return diagnostics
