@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-from hardware import HARDWARE_AVAILABLE
 from logger import logger
 
 router = APIRouter()
