@@ -90,6 +90,12 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Setup Convex and generate API
+        working-directory: ./db
+        run: |
+          npm ci
+          npx convex dev --once || npx convex codegen
+
       - name: Build frontend
         working-directory: ./frontend
         run: |
