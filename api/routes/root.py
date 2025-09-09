@@ -8,4 +8,4 @@ router = APIRouter()
 def root():
     """Simple test endpoint that doesn't require hardware"""
     logger.info("Root endpoint accessed")
-    return {"message": "Smart Oven API is running", "hardware_available": HARDWARE_AVAILABLE}
+    return {"message": "Smart Oven API is running, to see the API endpoints, go to http://localhost:8081/docs"}

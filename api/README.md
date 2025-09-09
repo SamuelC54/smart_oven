@@ -58,26 +58,15 @@ Once running, access the interactive API documentation at:
 
 ### Temperature
 
-| Method | Endpoint        | Description                       |
-| ------ | --------------- | --------------------------------- |
-| GET    | `/temperature`  | Get current temperature reading   |
-| GET    | `/sensor-debug` | Detailed sensor debug information |
-
-### GPIO Control
-
-| Method | Endpoint       | Description                 |
-| ------ | -------------- | --------------------------- |
-| POST   | `/gpio`        | Set GPIO pin state          |
-| GET    | `/gpio-test`   | Test GPIO access            |
-| GET    | `/gpio-status` | Get GPIO status information |
+| Method | Endpoint       | Description                     |
+| ------ | -------------- | ------------------------------- |
+| GET    | `/temperature` | Get current temperature reading |
 
 ### Debug & Diagnostics
 
-| Method | Endpoint          | Description           |
-| ------ | ----------------- | --------------------- |
-| GET    | `/spi-test`       | Test SPI access       |
-| GET    | `/logs`           | Get application logs  |
-| GET    | `/debug/max31865` | Debug MAX31865 sensor |
+| Method | Endpoint | Description          |
+| ------ | -------- | -------------------- |
+| GET    | `/logs`  | Get application logs |
 
 ## Configuration
 
@@ -152,13 +141,7 @@ api/
     ├── root.py         # Root endpoint (/)
     ├── health.py       # Health check endpoint (/health)
     ├── temperature_get.py  # Get temperature endpoint (/temperature)
-    ├── sensor_debug.py # Sensor debug endpoint (/sensor-debug)
-    ├── gpio_set.py     # Set GPIO endpoint (POST /gpio)
-    ├── gpio_test.py    # GPIO test endpoint (/gpio-test)
-    ├── gpio_status.py  # GPIO status endpoint (/gpio-status)
-    ├── spi_test.py     # SPI test endpoint (/spi-test)
-    ├── logs.py         # Logs endpoint (/logs)
-    └── debug_max31865.py # MAX31865 debug endpoint (/debug/max31865)
+    └── logs.py         # Logs endpoint (/logs)
 ```
 
 ### Adding New Endpoints
