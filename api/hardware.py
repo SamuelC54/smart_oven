@@ -45,8 +45,8 @@ class MAX31865Adafruit:
         # Create sensor object, communicating over the board's default SPI bus
         self.spi = busio.SPI(board.SCLK, MOSI=board.MOSI, MISO=board.MISO)
         
-        # Initialize CS pin
-        self.cs = digitalio.DigitalInOut(board.D16)  # GPIO 16
+        # Initialize CS pin - GPIO 16 is RESERVED for this purpose
+        self.cs = digitalio.DigitalInOut(board.D16)  # GPIO 16 - RESERVED for SPI CS
         
         # Initialize the MAX31865 sensor
         self.sensor = adafruit_max31865.MAX31865(
@@ -290,15 +290,15 @@ GPIO_MAP = {
     5: board.D5,
     6: board.D6,
     7: board.D7,
-    8: board.D8,
-    9: board.D9,
-    10: board.D10,
-    11: board.D11,
+    # 8: board.D8,   # RESERVED for SPI0_CE0 - Standard SPI Chip Enable
+    # 9: board.D9,   # RESERVED for SPI0_MISO - Standard SPI MISO
+    # 10: board.D10, # RESERVED for SPI0_MOSI - Standard SPI MOSI  
+    # 11: board.D11, # RESERVED for SPI0_SCLK - Standard SPI Clock
     12: board.D12,
     13: board.D13,
     14: board.D14,
     15: board.D15,
-    16: board.D16,
+    # 16: board.D16,  # RESERVED for MAX31865 CS pin - DO NOT USE for GPIO operations
     17: board.D17,
     18: board.D18,
     19: board.D19,
