@@ -203,7 +203,7 @@ def diagnose_gpio_access():
 
 
 PIN_MAP = {
-    16: board.D16, # Pin 16 - GPIO 23
-    18: board.D18, # Pin 18 - GPIO 24    
-    22: board.D22 # Pin 22 - GPIO 25
+    23: board.D16, # Pin 16 - GPIO 23
+    24: board.D18, # Pin 18 - GPIO 24    
+    25: board.D22 # Pin 22 - GPIO 25
 }
