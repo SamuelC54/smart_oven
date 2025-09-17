@@ -22,7 +22,7 @@
     "deadcode": "cd frontend && npm run deadcode",
     "deadcode:strict": "cd frontend && npm run deadcode:strict",
     "deadcode:summary": "cd frontend && npm run deadcode:summary",
-    "api:validate": "python -m compileall -f api || (echo \"❌ Python not found - API validation failed\" && exit 1)",
+    "api:validate": "python -m compileall -f api || (echo \"❌ Python compilation failed\" && exit 1)",
     "build": "npm run typecheck && npm run api:validate"
   },
   "lint-staged": {

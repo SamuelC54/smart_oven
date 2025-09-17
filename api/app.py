@@ -10,11 +10,8 @@ from routes import (
     root,
     health,
     temperature_get,
-    oven_control,
     logs,
-    gpio_set,
-    gpio_status,
-    gpio_test
+    gpio_set
 )
 
 app = FastAPI(title="Pi Sensor/GPIO API (Docker)")
@@ -37,11 +34,8 @@ logger.info(f"Starting Smart Oven API with config: RTD={RTD_NOMINAL}, REF={REF_R
 app.include_router(root.router, tags=["health"])
 app.include_router(health.router, tags=["health"])
 app.include_router(temperature_get.router, tags=["temperature"])
-app.include_router(oven_control.router, tags=["oven"])
 app.include_router(logs.router, tags=["debug"])
 app.include_router(gpio_set.router, tags=["gpio"])
-app.include_router(gpio_status.router, tags=["gpio"])
-app.include_router(gpio_test.router, tags=["gpio"])
 
 @app.on_event("startup")
 async def startup_event():
