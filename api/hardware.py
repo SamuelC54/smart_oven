@@ -215,7 +215,7 @@ def diagnose_gpio_access():
     
     # Test basic imports
     try:
-        import board, digitalio, busio
+        import board, digitalio
         diagnostics["tests"]["imports"] = "SUCCESS"
     except Exception as e:
         diagnostics["tests"]["imports"] = f"FAILED: {e}"
