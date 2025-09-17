@@ -117,44 +117,87 @@ def get_sensor():
     
     return _sensor
 
-def set_gpio(pin: int, state: bool):
+def get_available_gpios():
+    """Get list of available GPIO numbers from GPIO_MAP"""
+    return list(GPIO_MAP.keys())
+
+def get_gpio_info():
+    """Get detailed information about available GPIOs"""
+    return {
+        "available_gpios": get_available_gpios(),
+        "gpio_map": GPIO_MAP,
+        "hardware_available": HARDWARE_AVAILABLE
+    }
+
+def validate_gpio(gpio_num: int):
+    """Validate GPIO number and return the corresponding board object
+    
+    Args:
+        gpio_num: GPIO number to validate
+        
+    Returns:
+        board object corresponding to the GPIO number
+        
+    Raises:
+        ValueError: If GPIO number is not supported
+    """
+    if gpio_num not in GPIO_MAP:
+        available_gpios = get_available_gpios()
+        raise ValueError(f"Unsupported GPIO number: {gpio_num}. Available GPIOs: {available_gpios}")
+    
+    return GPIO_MAP[gpio_num]
+
+def set_gpio(gpio_num: int, state: bool):
+    """Set GPIO to specified state
+    
+    Args:
+        gpio_num: GPIO number to control
+        state: True for HIGH, False for LOW
+        
+    Returns:
+        bool: True if successful
+        
+    Raises:
+        Exception: If hardware not available or GPIO operation fails
+    """
     if not HARDWARE_AVAILABLE:
         raise Exception("Hardware libraries not available")
     
     try:
-        # Map pin number to board pin
-        gpio_pin = PIN_MAP[pin]
-        if gpio_pin is None:
-            raise ValueError(f"Unsupported GPIO pin: {pin}. Supported pins: 16, 18, 22")
-
-
+        # Validate GPIO number and get board object
+        board_gpio = validate_gpio(gpio_num)
         
         # Create GPIO object with proper cleanup
-        pin_obj = digitalio.DigitalInOut(gpio_pin)
-        pin_obj.direction = digitalio.Direction.OUTPUT
-        pin_obj.value = state
+        gpio_obj = digitalio.DigitalInOut(board_gpio)
+        gpio_obj.direction = digitalio.Direction.OUTPUT
+        gpio_obj.value = state
         
-        # Clean up the pin object to avoid "busy" errors
-        pin_obj.deinit()
+        # Clean up the GPIO object to avoid "busy" errors
+        gpio_obj.deinit()
         
-        logger.info(f"GPIO {pin} set to {state}")
+        logger.info(f"GPIO {gpio_num} set to {state}")
         return True
         
+    except ValueError as e:
+        # GPIO validation error - already has proper message
+        logger.error(str(e))
+        raise Exception(str(e))
     except PermissionError as e:
-        error_msg = f"Permission denied accessing GPIO {pin}. Check if running with proper privileges or if GPIO device is accessible."
+        error_msg = f"Permission denied accessing GPIO {gpio_num}. Check if running with proper privileges or if GPIO device is accessible."
         logger.error(error_msg)
         raise Exception(error_msg)
     except OSError as e:
         if "busy" in str(e).lower():
-            error_msg = f"GPIO {pin} is busy or already in use. Try a different pin or check for conflicting processes."
+            available_gpios = get_available_gpios()
+            error_msg = f"GPIO {gpio_num} is busy or already in use. Try a different GPIO from available options: {available_gpios}"
         elif "no such file or directory" in str(e).lower():
-            error_msg = f"GPIO {pin} device not found. Check if GPIO hardware is available and properly configured."
+            error_msg = f"GPIO {gpio_num} device not found. Check if GPIO hardware is available and properly configured."
         else:
-            error_msg = f"OS error accessing GPIO {pin}: {e}"
+            error_msg = f"OS error accessing GPIO {gpio_num}: {e}"
         logger.error(error_msg)
         raise Exception(error_msg)
     except Exception as e:
-        logger.error(f"Failed to set GPIO {pin}: {e}")
+        logger.error(f"Failed to set GPIO {gpio_num}: {e}")
         raise Exception(f"GPIO operation failed: {e}")
 
 def diagnose_gpio_access():
@@ -185,24 +228,22 @@ def diagnose_gpio_access():
     except Exception as e:
         diagnostics["tests"]["board_access"] = f"FAILED: {e}"
     
-    # Test GPIO pin creation (without setting values)
-    test_pins = [16, 18, 22]
-    for pin in test_pins:
+    # Test GPIO creation (without setting values) for all available GPIOs
+    available_gpios = get_available_gpios()
+    for gpio_num in available_gpios:
         try:
-            gpio_pin = PIN_MAP[pin]
-            if gpio_pin is None:
-                raise ValueError(f"Unsupported GPIO pin: {pin}. Supported pins: 16, 18, 22")
+            board_gpio = validate_gpio(gpio_num)
             
-            pin_obj = digitalio.DigitalInOut(gpio_pin)
-            pin_obj.deinit()  # Clean up immediately
-            diagnostics["tests"][f"pin_{pin}_access"] = "SUCCESS"
+            gpio_obj = digitalio.DigitalInOut(board_gpio)
+            gpio_obj.deinit()  # Clean up immediately
+            diagnostics["tests"][f"gpio_{gpio_num}_access"] = "SUCCESS"
         except Exception as e:
-            diagnostics["tests"][f"pin_{pin}_access"] = f"FAILED: {e}"
+            diagnostics["tests"][f"gpio_{gpio_num}_access"] = f"FAILED: {e}"
     
     return diagnostics
 
 
-PIN_MAP = {
+GPIO_MAP = {
     23: board.D16, # Pin 16 - GPIO 23
     24: board.D18, # Pin 18 - GPIO 24    
     25: board.D22 # Pin 22 - GPIO 25
