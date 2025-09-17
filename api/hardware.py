@@ -123,16 +123,11 @@ def set_gpio(pin: int, state: bool):
     
     try:
         # Map pin number to board pin
-        if pin == 18:
-            gpio_pin = board.D18
-        elif pin == 23:
-            gpio_pin = board.D23
-        elif pin == 24:
-            gpio_pin = board.D24
-        elif pin == 25:
-            gpio_pin = board.D25
-        else:
-            raise ValueError(f"Unsupported GPIO pin: {pin}. Supported pins: 18, 23, 24, 25")
+        gpio_pin = PIN_MAP[pin]
+        if gpio_pin is None:
+            raise ValueError(f"Unsupported GPIO pin: {pin}. Supported pins: 16, 18, 22")
+
+
         
         # Create GPIO object with proper cleanup
         pin_obj = digitalio.DigitalInOut(gpio_pin)
@@ -191,17 +186,12 @@ def diagnose_gpio_access():
         diagnostics["tests"]["board_access"] = f"FAILED: {e}"
     
     # Test GPIO pin creation (without setting values)
-    test_pins = [18, 23, 24, 25]
+    test_pins = [16, 18, 22]
     for pin in test_pins:
         try:
-            if pin == 18:
-                gpio_pin = board.D18
-            elif pin == 23:
-                gpio_pin = board.D23
-            elif pin == 24:
-                gpio_pin = board.D24
-            elif pin == 25:
-                gpio_pin = board.D25
+            gpio_pin = PIN_MAP[pin]
+            if gpio_pin is None:
+                raise ValueError(f"Unsupported GPIO pin: {pin}. Supported pins: 16, 18, 22")
             
             pin_obj = digitalio.DigitalInOut(gpio_pin)
             pin_obj.deinit()  # Clean up immediately
@@ -210,3 +200,10 @@ def diagnose_gpio_access():
             diagnostics["tests"][f"pin_{pin}_access"] = f"FAILED: {e}"
     
     return diagnostics
+
+
+PIN_MAP = {
+    16: board.D16, # Pin 16 - GPIO 23
+    18: board.D18, # Pin 18 - GPIO 24    
+    22: board.D22 # Pin 22 - GPIO 25
+}
