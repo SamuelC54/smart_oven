@@ -223,7 +223,7 @@ def diagnose_gpio_access():
     # Test board access
     try:
         available_pins = [attr for attr in dir(board) if attr.startswith('D')]
-        diagnostics["available_pins"] = available_pins[:10]  # Show first 10
+        diagnostics["available_pins"] = available_pins
         diagnostics["tests"]["board_access"] = "SUCCESS"
     except Exception as e:
         diagnostics["tests"]["board_access"] = f"FAILED: {e}"
