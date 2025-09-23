@@ -60,7 +60,11 @@ enable_camera_config() {
         changed=true
     fi
     
-    return $changed
+    if [ "$changed" = true ]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Enable camera using raspi-config if available
@@ -86,11 +90,17 @@ if ! getent group video >/dev/null; then
     echo "Created video group"
 fi
 
-# Add pi user to video group
-if ! groups pi | grep -q video; then
-    sudo usermod -a -G video pi
-    echo "Added user 'pi' to video group"
-    NEEDS_REBOOT=true
+# Add samuel user to video group
+if getent passwd samuel >/dev/null; then
+    if ! groups samuel | grep -q video; then
+        sudo usermod -a -G video samuel
+        echo "Added user 'samuel' to video group"
+        NEEDS_REBOOT=true
+    else
+        echo "User 'samuel' already in video group"
+    fi
+else
+    echo "User 'samuel' not found - camera permissions may need manual setup"
 fi
 
 # Check if camera module is loaded
@@ -109,7 +119,11 @@ fi
 echo "=== Camera Configuration Complete ==="
 echo "Camera interface: ENABLED"
 echo "GPU Memory: $(grep "^gpu_mem=" "$CONFIG_FILE" | cut -d'=' -f2 || echo "default")MB"
-echo "User groups: $(groups pi)"
+if getent passwd samuel >/dev/null; then
+    echo "User groups: $(groups samuel)"
+else
+    echo "User 'samuel' not found"
+fi
 
 if [ "$NEEDS_REBOOT" = true ]; then
     echo "REBOOT REQUIRED to activate camera changes"
