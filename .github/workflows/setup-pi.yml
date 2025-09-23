@@ -34,6 +34,12 @@ jobs:
           chmod +x deploy/setup-scripts/enable-i2c.sh
           ./deploy/setup-scripts/enable-i2c.sh
 
+      - name: Enable Camera interface
+        id: enable-camera
+        run: |
+          chmod +x deploy/setup-scripts/enable-camera.sh
+          ./deploy/setup-scripts/enable-camera.sh
+
       - name: Verify configuration changes
         run: |
           chmod +x deploy/setup-scripts/verify-config.sh
@@ -64,5 +70,5 @@ jobs:
       - name: Reboot Raspberry Pi
         uses: ./.github/actions/reboot-pi
         with:
-          reason: "Hardware interfaces (SPI/I2C) were enabled. Rebooting to activate them."
+          reason: "Hardware interfaces (SPI/I2C/Camera) were enabled. Rebooting to activate them."
           wait_seconds: "5"

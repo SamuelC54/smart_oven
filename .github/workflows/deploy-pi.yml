@@ -137,6 +137,16 @@ jobs:
     needs: determine-changes
     if: needs.determine-changes.outputs.api-should-run == 'true'
     steps:
+      - name: Check camera setup
+        run: |
+          # Check if camera devices exist
+          if ls /dev/video* >/dev/null 2>&1; then
+            echo "Camera devices found:"
+            ls -la /dev/video*
+          else
+            echo "Warning: No camera devices found. Run setup-pi.yml workflow to enable camera."
+          fi
+
       - name: Restart API
         working-directory: ./api
         run: |
@@ -157,6 +167,7 @@ jobs:
       - name: Smoke test
         run: |
           curl -sSf http://127.0.0.1:8081/health
+          curl -sSf http://127.0.0.1:8081/camera/info || echo "Camera not available (normal if camera not connected)"
 
       - name: Display API endpoints
         run: |
@@ -164,8 +175,18 @@ jobs:
           PI_IP=$(hostname -I | awk '{print $1}')
 
           echo "=========================================="
-          echo "API is now accessible from external devices:"
-          echo "http://$PI_IP:8081/"
+          echo "Smart Oven API is now accessible from external devices:"
+          echo "Main API: http://$PI_IP:8081/"
+          echo "Health Check: http://$PI_IP:8081/health"
+          echo "Temperature: http://$PI_IP:8081/temperature"
+          echo ""
+          echo "Camera Endpoints:"
+          echo "Camera Info: http://$PI_IP:8081/camera/info"
+          echo "Camera Stream: http://$PI_IP:8081/camera/stream"
+          echo "Camera Snapshot: http://$PI_IP:8081/camera/snapshot"
+          echo "Camera Diagnostics: http://$PI_IP:8081/camera/diagnose"
+          echo ""
+          echo "Frontend: http://$PI_IP:3000 (if smart-oven-web service is running)"
           echo "=========================================="
 
   reboot:

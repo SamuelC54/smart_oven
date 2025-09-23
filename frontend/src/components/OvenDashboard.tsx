@@ -18,6 +18,7 @@ import {
   Droplets,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { CameraStream } from "./CameraStream";
 import {
   // Keep UI-specific atoms
   timeRemainingAtom,
@@ -401,6 +402,9 @@ export function OvenDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Camera Stream */}
+        <CameraStream className="mb-3" showControls={!isRunning} quality={75} />
 
         {/* Cooking Mode Selection */}
         <Card className="p-3 rounded-2xl border-2 shadow-md">

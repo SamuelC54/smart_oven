@@ -11,7 +11,8 @@ from routes import (
     health,
     temperature_get,
     logs,
-    gpio_set
+    gpio_set,
+    camera
 )
 
 app = FastAPI(title="Pi Sensor/GPIO API (Docker)")
@@ -36,6 +37,7 @@ app.include_router(health.router, tags=["health"])
 app.include_router(temperature_get.router, tags=["temperature"])
 app.include_router(logs.router, tags=["debug"])
 app.include_router(gpio_set.router, tags=["gpio"])
+app.include_router(camera.router, tags=["camera"])
 
 @app.on_event("startup")
 async def startup_event():
