@@ -6,8 +6,14 @@ try:
     CAMERA_AVAILABLE = True
 except ImportError as e:
     CAMERA_AVAILABLE = False
+    # Create dummy numpy for type hints
+    class np:
+        ndarray = object
 except Exception as e:
     CAMERA_AVAILABLE = False
+    # Create dummy numpy for type hints
+    class np:
+        ndarray = object
 
 # Import logger after hardware imports to avoid circular imports
 from logger import logger
