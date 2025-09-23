@@ -151,6 +151,7 @@ jobs:
         working-directory: ./api
         run: |
           docker compose down || true
+          docker container rm smart-oven-api || true
           docker compose up -d --build
 
       - name: Wait for container to start
