@@ -1,8 +1,9 @@
 FROM python:3.11-slim
 
-# System deps (keep minimal for camera support)
+# System deps (minimal for Python package builds)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates build-essential \
+    libcap-dev pkg-config \
  && rm -rf /var/lib/apt/lists/*
 
 # App
