@@ -1,12 +1,8 @@
 FROM python:3.11-slim
 
-# System deps (including camera and video dependencies)
+# System deps (keep minimal for camera support)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates build-essential \
-    libcamera-dev libcamera-tools \
-    python3-libcamera python3-kms++ \
-    python3-prctl libatlas-base-dev \
-    ffmpeg libsm6 libxext6 \
  && rm -rf /var/lib/apt/lists/*
 
 # App
