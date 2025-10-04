@@ -1,3 +1,10 @@
+# Import logger first to avoid circular imports
+from logger import logger
+import time
+import threading
+import io
+from typing import Optional, Generator
+
 # --- Camera imports with error handling ---
 try:
     import cv2
@@ -31,13 +38,6 @@ except ImportError:
     PICAMERA2_AVAILABLE = False
 except Exception:
     PICAMERA2_AVAILABLE = False
-
-# Import logger after hardware imports to avoid circular imports
-from logger import logger
-import time
-import threading
-import io
-from typing import Optional, Generator
 
 # Now log the camera status
 if CAMERA_AVAILABLE:
@@ -244,6 +244,8 @@ def diagnose_camera():
     """Diagnose camera access and return detailed information"""
     diagnostics = {
         "camera_available": CAMERA_AVAILABLE,
+        "opencv_available": OPENCV_AVAILABLE,
+        "picamera2_available": PICAMERA2_AVAILABLE,
         "tests": {}
     }
     
@@ -251,35 +253,71 @@ def diagnose_camera():
         diagnostics["error"] = "Camera libraries not available in container environment. This is expected - camera will work when hardware is connected."
         return diagnostics
     
-    # Test camera initialization
-    try:
-        test_camera = Picamera2()
-        diagnostics["tests"]["camera_init"] = "SUCCESS"
-        
-        # Test camera configuration
-        config = test_camera.create_video_configuration(
-            main={"size": (640, 480), "format": "RGB888"}
-        )
-        test_camera.configure(config)
-        diagnostics["tests"]["camera_config"] = "SUCCESS"
-        
-        # Test camera start/stop
-        test_camera.start()
-        diagnostics["tests"]["camera_start"] = "SUCCESS"
-        
-        # Capture a test frame
-        frame = test_camera.capture_array()
-        if frame is not None:
-            diagnostics["tests"]["frame_capture"] = "SUCCESS"
-            diagnostics["frame_shape"] = frame.shape
-        else:
-            diagnostics["tests"]["frame_capture"] = "FAILED: No frame data"
-        
-        test_camera.stop()
-        test_camera.close()
-        diagnostics["tests"]["camera_cleanup"] = "SUCCESS"
-        
-    except Exception as e:
-        diagnostics["tests"]["camera_test"] = f"FAILED: {e}"
+    # Test video device access
+    import os
+    video_devices = []
+    for i in range(5):  # Check /dev/video0 through /dev/video4
+        device_path = f"/dev/video{i}"
+        if os.path.exists(device_path):
+            video_devices.append(device_path)
+    
+    diagnostics["video_devices"] = video_devices
+    
+    if not video_devices:
+        diagnostics["tests"]["device_check"] = "FAILED: No video devices found"
+        return diagnostics
+    
+    # Test OpenCV camera access
+    if OPENCV_AVAILABLE:
+        try:
+            test_camera = cv2.VideoCapture(0)
+            if test_camera.isOpened():
+                diagnostics["tests"]["opencv_open"] = "SUCCESS"
+                
+                # Try to read a frame
+                ret, frame = test_camera.read()
+                if ret and frame is not None:
+                    diagnostics["tests"]["opencv_capture"] = "SUCCESS"
+                    diagnostics["frame_shape"] = frame.shape
+                else:
+                    diagnostics["tests"]["opencv_capture"] = "FAILED: Could not capture frame"
+                
+                test_camera.release()
+            else:
+                diagnostics["tests"]["opencv_open"] = "FAILED: Could not open camera"
+        except Exception as e:
+            diagnostics["tests"]["opencv_test"] = f"FAILED: {e}"
+    
+    # Test picamera2 if OpenCV failed
+    if PICAMERA2_AVAILABLE and diagnostics["tests"].get("opencv_capture") != "SUCCESS":
+        try:
+            test_camera = Picamera2()
+            diagnostics["tests"]["picamera2_init"] = "SUCCESS"
+            
+            # Test camera configuration
+            config = test_camera.create_video_configuration(
+                main={"size": (640, 480), "format": "RGB888"}
+            )
+            test_camera.configure(config)
+            diagnostics["tests"]["picamera2_config"] = "SUCCESS"
+            
+            # Test camera start/stop
+            test_camera.start()
+            diagnostics["tests"]["picamera2_start"] = "SUCCESS"
+            
+            # Capture a test frame
+            frame = test_camera.capture_array()
+            if frame is not None:
+                diagnostics["tests"]["picamera2_capture"] = "SUCCESS"
+                diagnostics["frame_shape"] = frame.shape
+            else:
+                diagnostics["tests"]["picamera2_capture"] = "FAILED: No frame data"
+            
+            test_camera.stop()
+            test_camera.close()
+            diagnostics["tests"]["picamera2_cleanup"] = "SUCCESS"
+            
+        except Exception as e:
+            diagnostics["tests"]["picamera2_test"] = f"FAILED: {e}"
     
     return diagnostics
