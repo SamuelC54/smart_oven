@@ -11,6 +11,11 @@ services:
       - "/dev/spidev0.0:/dev/spidev0.0"
       - "/dev/spidev0.1:/dev/spidev0.1"
       - "/dev/video0:/dev/video0" # Camera device
+      - "/dev/video10:/dev/video10" # Additional camera devices
+      - "/dev/video11:/dev/video11"
+      - "/dev/video12:/dev/video12"
+    volumes:
+      - "/opt/vc:/opt/vc:ro" # VideoCore libraries
     environment:
       SENSOR_RTD_NOMINAL: "100" # set 1000 for PT1000
       SENSOR_REF_RESISTOR: "430" # adjust to your breakout's value

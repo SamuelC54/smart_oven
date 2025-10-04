@@ -112,8 +112,10 @@ fi
 if ! command -v libcamera-hello >/dev/null 2>&1; then
     echo "Installing libcamera utilities..."
     sudo apt-get update -qq
-    sudo apt-get install -y libcamera-apps
+    sudo apt-get install -y libcamera-apps libcamera-tools
     echo "Installed libcamera utilities"
+else
+    echo "libcamera utilities already installed"
 fi
 
 echo "=== Camera Configuration Complete ==="

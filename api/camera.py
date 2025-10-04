@@ -26,7 +26,7 @@ from typing import Optional, Generator
 if CAMERA_AVAILABLE:
     logger.info("Camera libraries imported successfully")
 else:
-    logger.error("Failed to import camera libraries - picamera2 and opencv-python required")
+    logger.info("Camera libraries not available in container environment (this is expected)")
 
 # --- Global camera instance ---
 _camera = None
@@ -155,7 +155,7 @@ def get_camera() -> CameraManager:
     global _camera
     
     if not CAMERA_AVAILABLE:
-        raise Exception("Camera libraries not available")
+        raise Exception("Camera libraries not available in container environment. Camera hardware access requires physical Pi connection.")
     
     with _camera_lock:
         if _camera is None:
@@ -164,7 +164,8 @@ def get_camera() -> CameraManager:
                 _camera = CameraManager(resolution=(640, 480), framerate=30)
                 logger.info("Camera initialized successfully")
             except Exception as e:
-                logger.error(f"Failed to initialize camera: {e}")
+                logger.error(f"Failed to initialize camera hardware: {e}")
+                logger.info("This is expected in Docker containers without camera hardware access")
                 raise
     
     return _camera
@@ -186,7 +187,7 @@ def diagnose_camera():
     }
     
     if not CAMERA_AVAILABLE:
-        diagnostics["error"] = "Camera libraries not available - install picamera2 and opencv-python"
+        diagnostics["error"] = "Camera libraries not available in container environment. This is expected - camera will work when hardware is connected."
         return diagnostics
     
     # Test camera initialization
