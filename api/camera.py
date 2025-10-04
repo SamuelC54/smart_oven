@@ -299,19 +299,50 @@ def diagnose_camera(max_devices: int = 20):
     
     # Test OpenCV camera access
     if OPENCV_AVAILABLE:
+        # Test multiple video devices to find working ones
+        working_devices = []
+        for i in [0, 1, 2, 3, 10, 11, 12, 13]:  # Test common camera device indices
+            device_path = f"/dev/video{i}"
+            if device_path in video_devices:
+                try:
+                    test_camera = cv2.VideoCapture(i)
+                    if test_camera.isOpened():
+                        # Try to read a frame
+                        ret, frame = test_camera.read()
+                        if ret and frame is not None:
+                            working_devices.append({
+                                "device": f"/dev/video{i}",
+                                "index": i,
+                                "frame_shape": frame.shape,
+                                "status": "SUCCESS"
+                            })
+                            diagnostics["tests"][f"opencv_device_{i}"] = f"SUCCESS: Frame shape {frame.shape}"
+                        else:
+                            diagnostics["tests"][f"opencv_device_{i}"] = "FAILED: Could not capture frame"
+                        test_camera.release()
+                    else:
+                        diagnostics["tests"][f"opencv_device_{i}"] = "FAILED: Could not open device"
+                except Exception as e:
+                    diagnostics["tests"][f"opencv_device_{i}"] = f"FAILED: {e}"
+        
+        diagnostics["working_opencv_devices"] = working_devices
+        
+        # Overall OpenCV test result
+        if working_devices:
+            diagnostics["tests"]["opencv_capture"] = f"SUCCESS: {len(working_devices)} working devices found"
+        else:
+            diagnostics["tests"]["opencv_capture"] = "FAILED: No working camera devices found"
+            
+        # Legacy single device test for backwards compatibility
         try:
             test_camera = cv2.VideoCapture(0)
             if test_camera.isOpened():
                 diagnostics["tests"]["opencv_open"] = "SUCCESS"
-                
-                # Try to read a frame
                 ret, frame = test_camera.read()
                 if ret and frame is not None:
-                    diagnostics["tests"]["opencv_capture"] = "SUCCESS"
-                    diagnostics["frame_shape"] = frame.shape
+                    diagnostics["tests"]["opencv_single"] = "SUCCESS"
                 else:
-                    diagnostics["tests"]["opencv_capture"] = "FAILED: Could not capture frame"
-                
+                    diagnostics["tests"]["opencv_single"] = "FAILED: Could not capture frame from /dev/video0"
                 test_camera.release()
             else:
                 diagnostics["tests"]["opencv_open"] = "FAILED: Could not open camera"
