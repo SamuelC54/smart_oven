@@ -85,8 +85,9 @@ class CameraManager:
         
         try:
             # Use Picamera2's built-in JPEG capture
-            jpeg_data = self.camera.capture_file(io.BytesIO(), format='jpeg')
-            return jpeg_data.getvalue()
+            buffer = io.BytesIO()
+            self.camera.capture_file(buffer, format='jpeg')
+            return buffer.getvalue()
         except Exception as e:
             logger.error(f"Error capturing JPEG: {e}")
             return None
