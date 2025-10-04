@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Slider } from "./ui/slider";
@@ -43,11 +43,15 @@ export function CameraStream({
   const streamUrl = getCameraStreamUrl(currentQuality);
 
   // Handle stream start
-  const handleStartStream = async () => {
+  const handleStartStream = useCallback(async () => {
     try {
-      await startCamera.mutateAsync();
-      setIsStreaming(true);
       setStreamError(null);
+      await startCamera.mutateAsync();
+
+      // Wait a moment for camera to initialize
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      setIsStreaming(true);
 
       // Refresh camera info
       queryClient.invalidateQueries({ queryKey: ["camera", "info"] });
@@ -57,8 +61,9 @@ export function CameraStream({
       console.error("Failed to start camera:", error);
       toast.error("Failed to start camera");
       setStreamError(error instanceof Error ? error.message : "Unknown error");
+      setIsStreaming(false);
     }
-  };
+  }, [startCamera, queryClient]);
 
   // Handle stream stop
   const handleStopStream = async () => {
@@ -84,19 +89,41 @@ export function CameraStream({
     onQualityChange?.(qualityValue);
 
     // If streaming, restart with new quality
-    if (isStreaming && imgRef.current) {
-      imgRef.current.src = getCameraStreamUrl(qualityValue);
+    if ((isStreaming || cameraStreamingStatus) && imgRef.current) {
+      const newStreamUrl = getCameraStreamUrl(qualityValue);
+      imgRef.current.src = newStreamUrl;
+    }
+  };
+
+  // Handle manual refresh
+  const handleRefresh = () => {
+    if (imgRef.current && cameraAvailable) {
+      const newStreamUrl =
+        getCameraStreamUrl(currentQuality) + "&t=" + Date.now();
+      imgRef.current.src = newStreamUrl;
+      setStreamError(null);
     }
   };
 
   // Handle image load/error
   const handleImageLoad = () => {
     setStreamError(null);
+    setIsStreaming(true);
   };
 
-  const handleImageError = () => {
+  const handleImageError = (
+    event: React.SyntheticEvent<HTMLImageElement, Event>
+  ) => {
+    console.error("Image load error:", event);
     setStreamError("Failed to load camera stream");
     setIsStreaming(false);
+
+    // Try to refresh the stream after a short delay
+    setTimeout(() => {
+      if (imgRef.current && cameraAvailable) {
+        imgRef.current.src = streamUrl + "&t=" + Date.now(); // Add timestamp to bypass cache
+      }
+    }, 2000);
   };
 
   // Handle snapshot download
@@ -124,15 +151,37 @@ export function CameraStream({
     }
   };
 
-  // Auto-start stream if camera is available
-  useEffect(() => {
-    if (cameraInfo?.data?.camera_available && !isStreaming && !streamError) {
-      handleStartStream();
-    }
-  }, [cameraInfo]);
-
   const cameraAvailable = cameraInfo?.data?.camera_available;
   const cameraStreamingStatus = cameraInfo?.data?.is_streaming;
+
+  // Sync local streaming state with camera info
+  useEffect(() => {
+    if (cameraStreamingStatus !== undefined) {
+      setIsStreaming(cameraStreamingStatus);
+    }
+  }, [cameraStreamingStatus]);
+
+  // Auto-start stream if camera is available and not already streaming
+  useEffect(() => {
+    if (
+      cameraInfo?.data?.camera_available &&
+      !isStreaming &&
+      !streamError &&
+      !cameraStreamingStatus
+    ) {
+      // Add a small delay to prevent race conditions
+      const timer = setTimeout(() => {
+        handleStartStream();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    cameraInfo?.data?.camera_available,
+    cameraStreamingStatus,
+    isStreaming,
+    streamError,
+    handleStartStream,
+  ]);
 
   return (
     <Card className={`${className}`}>
@@ -209,7 +258,7 @@ export function CameraStream({
                 variant="outline"
                 size="sm"
                 onClick={handleSnapshot}
-                disabled={!isStreaming}
+                disabled={!isStreaming && !cameraStreamingStatus}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Snapshot
@@ -218,12 +267,8 @@ export function CameraStream({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (imgRef.current) {
-                    imgRef.current.src = streamUrl;
-                  }
-                }}
-                disabled={!isStreaming}
+                onClick={handleRefresh}
+                disabled={!isStreaming && !cameraStreamingStatus}
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Refresh
@@ -269,7 +314,7 @@ export function CameraStream({
                 </Button>
               </div>
             </div>
-          ) : isStreaming ? (
+          ) : isStreaming || cameraStreamingStatus ? (
             <img
               ref={imgRef}
               src={streamUrl}
@@ -277,6 +322,7 @@ export function CameraStream({
               className="w-full h-full object-cover"
               onLoad={handleImageLoad}
               onError={handleImageError}
+              crossOrigin="anonymous"
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">

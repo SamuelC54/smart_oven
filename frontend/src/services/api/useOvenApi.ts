@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 // Base API URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://192.168.0.71:8081";
 
 // Health check
 export const useHealth = () => {
