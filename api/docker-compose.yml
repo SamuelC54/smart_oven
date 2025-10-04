@@ -16,6 +16,7 @@ services:
       - "/dev/video12:/dev/video12"
     volumes:
       - "/opt/vc:/opt/vc:ro" # VideoCore libraries
+      - /run/udev:/run/udev:ro
     environment:
       SENSOR_RTD_NOMINAL: "100" # set 1000 for PT1000
       SENSOR_REF_RESISTOR: "430" # adjust to your breakout's value
