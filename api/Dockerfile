@@ -8,6 +8,9 @@ RUN echo "deb http://archive.raspberrypi.org/debian/ bookworm main" > /etc/apt/s
 RUN apt update && apt install -y --no-install-recommends \
   python3-pip \
   python3-picamera2 \
+  build-essential \
+  gcc \
+  python3-dev \
 && apt-get clean \
 && apt-get autoremove \
 && rm -rf /var/cache/apt/archives/* \
