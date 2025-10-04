@@ -3,7 +3,6 @@ uvicorn[standard]
 adafruit-circuitpython-max31865
 adafruit-blinka
 lgpio
-picamera2
 opencv-python
-numpy
+numpy==1.24.3
 simplejpeg
