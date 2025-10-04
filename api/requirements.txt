@@ -6,3 +6,4 @@ lgpio
 picamera2
 opencv-python
 numpy
+simplejpeg

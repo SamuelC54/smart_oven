@@ -4,36 +4,23 @@ import time
 import threading
 import io
 from typing import Optional, Generator
+import numpy as np
 
 # --- Camera imports with error handling ---
 try:
     from picamera2 import Picamera2
-    import numpy as np
     CAMERA_AVAILABLE = True
     logger.info("Picamera2 imported successfully")
 except ImportError as e:
     CAMERA_AVAILABLE = False
-    # Create dummy numpy for type hints
-    class np:
-        ndarray = object
-    logger.info("Picamera2 not available in container environment (this is expected)")
+    logger.info("Picamera2 not available in container environment (import error):" + str(e))
 except Exception as e:
     CAMERA_AVAILABLE = False
-    # Create dummy numpy for type hints
-    class np:
-        ndarray = object
-    logger.info("Picamera2 not available in container environment (this is expected)")
-
-# Now log the camera status
-if CAMERA_AVAILABLE:
-    logger.info("Camera libraries imported successfully")
-else:
-    logger.info("Camera libraries not available in container environment (this is expected)")
+    logger.info("Picamera2 not available in container environment (general error):" + str(e))
 
 # --- Global camera instance ---
 _camera = None
 _camera_lock = threading.Lock()
-
 class CameraManager:
     """Camera management using simple Picamera2"""
     
