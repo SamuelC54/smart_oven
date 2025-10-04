@@ -301,31 +301,57 @@ def diagnose_camera(max_devices: int = 20):
     if OPENCV_AVAILABLE:
         # Test multiple video devices to find working ones
         working_devices = []
-        for i in [0, 1, 2, 3, 10, 11, 12, 13]:  # Test common camera device indices
+        # Test more devices since we have 25 available
+        test_indices = [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 19, 20, 21, 22, 23, 24, 25]
+        
+        for i in test_indices:
             device_path = f"/dev/video{i}"
             if device_path in video_devices:
                 try:
-                    test_camera = cv2.VideoCapture(i)
-                    if test_camera.isOpened():
-                        # Try to read a frame
-                        ret, frame = test_camera.read()
-                        if ret and frame is not None:
-                            working_devices.append({
-                                "device": f"/dev/video{i}",
-                                "index": i,
-                                "frame_shape": frame.shape,
-                                "status": "SUCCESS"
-                            })
-                            diagnostics["tests"][f"opencv_device_{i}"] = f"SUCCESS: Frame shape {frame.shape}"
-                        else:
-                            diagnostics["tests"][f"opencv_device_{i}"] = "FAILED: Could not capture frame"
-                        test_camera.release()
-                    else:
-                        diagnostics["tests"][f"opencv_device_{i}"] = "FAILED: Could not open device"
+                    # Try different OpenCV backends
+                    backends_to_try = [
+                        (cv2.CAP_V4L2, "V4L2"),
+                        (cv2.CAP_ANY, "ANY"),
+                        (cv2.CAP_GSTREAMER, "GSTREAMER")
+                    ]
+                    
+                    device_results = []
+                    for backend, backend_name in backends_to_try:
+                        try:
+                            test_camera = cv2.VideoCapture(i, backend)
+                            if test_camera.isOpened():
+                                # Set some basic properties
+                                test_camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                                test_camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                                test_camera.set(cv2.CAP_PROP_FPS, 30)
+                                
+                                # Try to read a frame
+                                ret, frame = test_camera.read()
+                                if ret and frame is not None and frame.size > 0:
+                                    working_devices.append({
+                                        "device": f"/dev/video{i}",
+                                        "index": i,
+                                        "backend": backend_name,
+                                        "frame_shape": frame.shape,
+                                        "status": "SUCCESS"
+                                    })
+                                    device_results.append(f"{backend_name}: SUCCESS - Frame shape {frame.shape}")
+                                    break  # Found working backend, no need to test others
+                                else:
+                                    device_results.append(f"{backend_name}: Frame capture failed")
+                                test_camera.release()
+                            else:
+                                device_results.append(f"{backend_name}: Could not open")
+                        except Exception as e:
+                            device_results.append(f"{backend_name}: Error - {str(e)[:50]}")
+                    
+                    diagnostics["tests"][f"opencv_device_{i}"] = " | ".join(device_results)
+                    
                 except Exception as e:
                     diagnostics["tests"][f"opencv_device_{i}"] = f"FAILED: {e}"
         
         diagnostics["working_opencv_devices"] = working_devices
+        diagnostics["tested_device_count"] = len(test_indices)
         
         # Overall OpenCV test result
         if working_devices:
