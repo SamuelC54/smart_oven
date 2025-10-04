@@ -1,25 +1,24 @@
-FROM python:3.11-slim
+FROM debian:bookworm
 
-# System dependencies for Python builds + OpenCV + extra dev packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Core
-    ca-certificates build-essential cmake git pkg-config \
-    # Capabilities
-    libcap-dev \
-    # X11 and rendering
-    libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
-    # Python development
-    python3-picamera2 \
-    # GStreamer
-    libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
-    # OpenCV extra (video/image codecs, GUI)
-    libgtk-3-dev libavcodec-dev libavformat-dev libswscale-dev \
- && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y --no-install-recommends gnupg
+
+RUN echo "deb http://archive.raspberrypi.org/debian/ bookworm main" > /etc/apt/sources.list.d/raspi.list \
+  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 82B129927FA3303E
+  
+RUN apt update && apt install -y --no-install-recommends \
+  python3-pip \
+  python3-picamera2 \
+&& apt-get clean \
+&& apt-get autoremove \
+&& rm -rf /var/cache/apt/archives/* \
+&& rm -rf /var/lib/apt/lists/*
 
 # App setup
 WORKDIR /app
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+RUN pip install --break-system-packages --no-cache-dir -r requirements.txt
 
 COPY . .
 
