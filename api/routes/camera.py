@@ -22,10 +22,10 @@ async def camera_info():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/camera/diagnose")
-async def camera_diagnose():
-    """Diagnose camera functionality"""
+async def camera_diagnose(max_devices: int = 20):
+    """Diagnose camera functionality with optional device range limit"""
     try:
-        diagnostics = diagnose_camera()
+        diagnostics = diagnose_camera(max_devices=max_devices)
         logger.info("Camera diagnostics requested")
         return {
             "status": "success",

@@ -240,31 +240,61 @@ def get_camera_info():
         "framerate": _camera.framerate if _camera else None
     }
 
-def diagnose_camera():
+def diagnose_camera(max_devices: int = 20):
     """Diagnose camera access and return detailed information"""
     diagnostics = {
         "camera_available": CAMERA_AVAILABLE,
         "opencv_available": OPENCV_AVAILABLE,
         "picamera2_available": PICAMERA2_AVAILABLE,
+        "max_devices_checked": max_devices,
         "tests": {}
     }
     
-    if not CAMERA_AVAILABLE:
-        diagnostics["error"] = "Camera libraries not available in container environment. This is expected - camera will work when hardware is connected."
-        return diagnostics
-    
-    # Test video device access
+    # Test video device access FIRST (regardless of library availability)
     import os
-    video_devices = []
-    for i in range(5):  # Check /dev/video0 through /dev/video4
+    import glob
+    
+    # Method 1: Check using glob pattern (more comprehensive)
+    video_devices_glob = glob.glob('/dev/video*')
+    video_devices_glob.sort()
+    
+    # Method 2: Check specific range with configurable limit
+    video_devices_range = []
+    for i in range(max_devices):  # Check /dev/video0 through /dev/video{max_devices-1}
         device_path = f"/dev/video{i}"
         if os.path.exists(device_path):
-            video_devices.append(device_path)
+            video_devices_range.append(device_path)
+    
+    # Use glob results as primary, range as backup verification
+    video_devices = video_devices_glob if video_devices_glob else video_devices_range
     
     diagnostics["video_devices"] = video_devices
+    diagnostics["video_devices_count"] = len(video_devices)
+    
+    # Also show device permissions and info
+    device_info = {}
+    for device in video_devices:
+        try:
+            stat = os.stat(device)
+            device_info[device] = {
+                "exists": True,
+                "readable": os.access(device, os.R_OK),
+                "writable": os.access(device, os.W_OK),
+                "mode": oct(stat.st_mode)[-3:]
+            }
+        except Exception as e:
+            device_info[device] = {"exists": True, "error": str(e)}
+    
+    diagnostics["device_info"] = device_info
     
     if not video_devices:
         diagnostics["tests"]["device_check"] = "FAILED: No video devices found"
+    else:
+        diagnostics["tests"]["device_check"] = f"SUCCESS: Found {len(video_devices)} video devices"
+    
+    # If no camera libraries available, return early BUT with device info
+    if not CAMERA_AVAILABLE:
+        diagnostics["error"] = "Camera libraries not available in container environment. This is expected - camera will work when hardware is connected."
         return diagnostics
     
     # Test OpenCV camera access
