@@ -7,22 +7,22 @@ from typing import Optional, Generator
 
 # --- Camera imports with error handling ---
 try:
-    import cv2
+    from picamera2 import Picamera2
     import numpy as np
     CAMERA_AVAILABLE = True
-    logger.info("OpenCV camera libraries imported successfully")
+    logger.info("Picamera2 imported successfully")
 except ImportError as e:
     CAMERA_AVAILABLE = False
     # Create dummy numpy for type hints
     class np:
         ndarray = object
-    logger.info("OpenCV libraries not available in container environment (this is expected)")
+    logger.info("Picamera2 not available in container environment (this is expected)")
 except Exception as e:
     CAMERA_AVAILABLE = False
     # Create dummy numpy for type hints
     class np:
         ndarray = object
-    logger.info("OpenCV libraries not available in container environment (this is expected)")
+    logger.info("Picamera2 not available in container environment (this is expected)")
 
 # Now log the camera status
 if CAMERA_AVAILABLE:
@@ -35,7 +35,7 @@ _camera = None
 _camera_lock = threading.Lock()
 
 class CameraManager:
-    """Camera management using OpenCV"""
+    """Camera management using simple Picamera2"""
     
     def __init__(self, resolution=(1024, 576), framerate=30):
         """Initialize camera with specified resolution and framerate"""
@@ -45,25 +45,12 @@ class CameraManager:
         self.is_streaming = False
         
         if not CAMERA_AVAILABLE:
-            raise Exception("OpenCV not available")
+            raise Exception("Picamera2 not available")
         
         try:
-            # Simple OpenCV initialization
-            self.camera = cv2.VideoCapture(0)
-            
-            if self.camera.isOpened():
-                # Set camera properties
-                self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
-                self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
-                self.camera.set(cv2.CAP_PROP_FPS, framerate)
-                
-                # Allow camera to initialize
-                time.sleep(0.1)
-                
-                logger.info(f"OpenCV camera initialized with resolution {resolution} at {framerate}fps")
-            else:
-                self.camera = None
-                raise Exception("Could not open camera with OpenCV")
+            # Simple Picamera2 initialization
+            self.camera = Picamera2()
+            logger.info(f"Picamera2 initialized with resolution {resolution} at {framerate}fps")
                 
         except Exception as e:
             logger.error(f"Failed to initialize camera: {e}")
@@ -74,15 +61,23 @@ class CameraManager:
         if not self.camera:
             raise Exception("Camera not initialized")
         
-        # OpenCV camera is ready when opened
-        self.is_streaming = True
-        logger.info("OpenCV camera ready for streaming")
+        try:
+            self.camera.start()
+            self.is_streaming = True
+            logger.info("Picamera2 started successfully")
+        except Exception as e:
+            logger.error(f"Failed to start camera: {e}")
+            raise
     
     def stop(self):
         """Stop the camera"""
         if self.camera and self.is_streaming:
-            self.is_streaming = False
-            logger.info("OpenCV camera stopped")
+            try:
+                self.camera.stop()
+                self.is_streaming = False
+                logger.info("Picamera2 stopped successfully")
+            except Exception as e:
+                logger.error(f"Error stopping camera: {e}")
     
     def capture_frame(self) -> Optional[np.ndarray]:
         """Capture a single frame from the camera"""
@@ -90,34 +85,23 @@ class CameraManager:
             return None
         
         try:
-            ret, frame = self.camera.read()
-            if ret and frame is not None:
-                return frame
-            else:
-                return None
+            frame = self.camera.capture_array()
+            return frame
         except Exception as e:
             logger.error(f"Error capturing frame: {e}")
             return None
     
     def capture_jpeg(self, quality: int = 85) -> Optional[bytes]:
         """Capture a frame and encode as JPEG"""
-        frame = self.capture_frame()
-        if frame is None:
+        if not self.camera or not self.is_streaming:
             return None
         
         try:
-            # OpenCV frame is already in BGR format
-            encode_params = [cv2.IMWRITE_JPEG_QUALITY, quality]
-            success, encoded_img = cv2.imencode('.jpg', frame, encode_params)
-            
-            if success:
-                return encoded_img.tobytes()
-            else:
-                logger.error("Failed to encode frame as JPEG")
-                return None
-                
+            # Use Picamera2's built-in JPEG capture
+            jpeg_data = self.camera.capture_file(io.BytesIO(), format='jpeg')
+            return jpeg_data.getvalue()
         except Exception as e:
-            logger.error(f"Error encoding frame: {e}")
+            logger.error(f"Error capturing JPEG: {e}")
             return None
     
     def get_mjpeg_stream(self, quality: int = 85) -> Generator[bytes, None, None]:
@@ -144,7 +128,7 @@ class CameraManager:
         self.stop()
         if self.camera:
             try:
-                self.camera.release()
+                self.camera.close()
                 logger.info("Camera closed successfully")
             except Exception as e:
                 logger.error(f"Error closing camera: {e}")
@@ -154,7 +138,7 @@ def get_camera() -> CameraManager:
     global _camera
     
     if not CAMERA_AVAILABLE:
-        raise Exception("OpenCV not available in container environment")
+        raise Exception("Picamera2 not available in container environment")
     
     with _camera_lock:
         if _camera is None:
@@ -231,69 +215,47 @@ def diagnose_camera(max_devices: int = 20):
         diagnostics["error"] = "Camera libraries not available in container environment. This is expected - camera will work when hardware is connected."
         return diagnostics
     
-    # Test OpenCV camera access with simple approach
+    # Test simple Picamera2 approach
     if CAMERA_AVAILABLE:
         working_devices = []
         
-        # Test simple VideoCapture(0) approach
+        # Test simple Picamera2 initialization
         try:
-            import time
+            # Simple initialization like your example
+            test_camera = Picamera2()
+            test_camera.start()
             
-            # Initialize video capture - simple approach
-            test_camera = cv2.VideoCapture(0)
+            # Allow camera to initialize
+            time.sleep(0.1)
             
-            if test_camera.isOpened():
-                # Set properties like your example
-                test_camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1024)
-                test_camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 576)
-                test_camera.set(cv2.CAP_PROP_FPS, 30)
-                
-                # Allow camera to initialize
-                time.sleep(0.1)
-                
-                # Try multiple frame reads (sometimes first few fail)
-                success_count = 0
-                last_frame = None
-                for attempt in range(5):
-                    ret, frame = test_camera.read()
-                    if ret and frame is not None and frame.size > 0:
-                        success_count += 1
-                        last_frame = frame
-                    time.sleep(0.05)  # Small delay between attempts
-                
-                if success_count > 0:
-                    # Get actual camera properties
-                    actual_width = int(test_camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-                    actual_height = int(test_camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                    actual_fps = test_camera.get(cv2.CAP_PROP_FPS)
-                    
+            # Try to capture a frame
+            try:
+                frame = test_camera.capture_array()
+                if frame is not None and frame.size > 0:
                     working_devices.append({
-                        "device": "/dev/video0",
-                        "index": 0,
-                        "frame_shape": last_frame.shape,
-                        "actual_resolution": f"{actual_width}x{actual_height}",
-                        "actual_fps": actual_fps,
-                        "success_rate": f"{success_count}/5",
+                        "device": "picamera2",
+                        "frame_shape": frame.shape,
                         "status": "SUCCESS"
                     })
-                    diagnostics["tests"]["opencv_simple"] = f"SUCCESS - {last_frame.shape} ({success_count}/5 frames)"
+                    diagnostics["tests"]["picamera2_simple"] = f"SUCCESS - Frame shape {frame.shape}"
                 else:
-                    diagnostics["tests"]["opencv_simple"] = "FAILED: Could not capture frames (0/5 attempts)"
-                    
-                test_camera.release()
-            else:
-                diagnostics["tests"]["opencv_simple"] = "FAILED: Could not open VideoCapture(0)"
+                    diagnostics["tests"]["picamera2_simple"] = "FAILED: Could not capture frame"
+            except Exception as e:
+                diagnostics["tests"]["picamera2_simple"] = f"FAILED: Frame capture error - {e}"
+                
+            test_camera.stop()
+            test_camera.close()
                 
         except Exception as e:
-            diagnostics["tests"]["opencv_simple"] = f"FAILED: {e}"
+            diagnostics["tests"]["picamera2_simple"] = f"FAILED: {e}"
         
-        diagnostics["working_opencv_devices"] = working_devices
+        diagnostics["working_devices"] = working_devices
         
         # Overall result
         if working_devices:
-            diagnostics["tests"]["opencv_capture"] = f"SUCCESS: Simple VideoCapture(0) works!"
+            diagnostics["tests"]["camera_capture"] = f"SUCCESS: Simple Picamera2 works!"
             diagnostics["recommended_device"] = working_devices[0]
         else:
-            diagnostics["tests"]["opencv_capture"] = "FAILED: VideoCapture(0) not working"
+            diagnostics["tests"]["camera_capture"] = "FAILED: Picamera2 not working"
     
     return diagnostics
