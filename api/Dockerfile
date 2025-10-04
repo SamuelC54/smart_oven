@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcap-dev \
     # X11 and rendering
     libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
+    # Python development
+    python3-picamera2 \
     # GStreamer
     libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
     # OpenCV extra (video/image codecs, GUI)
