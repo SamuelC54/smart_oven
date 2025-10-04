@@ -1,9 +1,11 @@
 FROM python:3.11-slim
 
-# System deps (minimal for Python package builds)
+# System deps (minimal for Python package builds + OpenCV)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates build-essential \
     libcap-dev pkg-config \
+    libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
+    libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
  && rm -rf /var/lib/apt/lists/*
 
 # App
