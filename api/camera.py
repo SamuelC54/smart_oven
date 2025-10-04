@@ -297,93 +297,71 @@ def diagnose_camera(max_devices: int = 20):
         diagnostics["error"] = "Camera libraries not available in container environment. This is expected - camera will work when hardware is connected."
         return diagnostics
     
-    # Test OpenCV camera access with robust configuration
+    # Test OpenCV camera access with simple approach
     if OPENCV_AVAILABLE:
-        # Test multiple video devices to find working ones
         working_devices = []
-        # Test more devices since we have 25 available
-        test_indices = [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 19, 20, 21, 22, 23, 24, 25]
         
-        for i in test_indices:
-            device_path = f"/dev/video{i}"
-            if device_path in video_devices:
-                try:
-                    # Try different OpenCV backends with robust configuration
-                    backends_to_try = [
-                        (cv2.CAP_V4L2, "V4L2"),
-                        (cv2.CAP_ANY, "ANY"),
-                        (cv2.CAP_GSTREAMER, "GSTREAMER")
-                    ]
+        # Test simple VideoCapture(0) approach first
+        try:
+            import time
+            
+            # Initialize video capture - simple approach
+            test_camera = cv2.VideoCapture(0)
+            
+            if test_camera.isOpened():
+                # Set properties like your example
+                test_camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1024)
+                test_camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 576)
+                test_camera.set(cv2.CAP_PROP_FPS, 30)
+                
+                # Allow camera to initialize
+                time.sleep(0.1)
+                
+                # Try multiple frame reads (sometimes first few fail)
+                success_count = 0
+                last_frame = None
+                for attempt in range(5):
+                    ret, frame = test_camera.read()
+                    if ret and frame is not None and frame.size > 0:
+                        success_count += 1
+                        last_frame = frame
+                    time.sleep(0.05)  # Small delay between attempts
+                
+                if success_count > 0:
+                    # Get actual camera properties
+                    actual_width = int(test_camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    actual_height = int(test_camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    actual_fps = test_camera.get(cv2.CAP_PROP_FPS)
                     
-                    device_results = []
-                    for backend, backend_name in backends_to_try:
-                        try:
-                            # Initialize video capture with explicit backend
-                            test_camera = cv2.VideoCapture(i, backend)
-                            
-                            if test_camera.isOpened():
-                                # Set properties like your example
-                                test_camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1024)
-                                test_camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 576)
-                                test_camera.set(cv2.CAP_PROP_FPS, 30)
-                                
-                                # Allow camera to initialize
-                                import time
-                                time.sleep(0.1)
-                                
-                                # Try multiple frame reads (sometimes first few fail)
-                                success_count = 0
-                                for attempt in range(5):
-                                    ret, frame = test_camera.read()
-                                    if ret and frame is not None and frame.size > 0:
-                                        success_count += 1
-                                    time.sleep(0.05)  # Small delay between attempts
-                                
-                                if success_count > 0:
-                                    # Get actual camera properties
-                                    actual_width = int(test_camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-                                    actual_height = int(test_camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                                    actual_fps = test_camera.get(cv2.CAP_PROP_FPS)
-                                    
-                                    working_devices.append({
-                                        "device": f"/dev/video{i}",
-                                        "index": i,
-                                        "backend": backend_name,
-                                        "frame_shape": frame.shape,
-                                        "actual_resolution": f"{actual_width}x{actual_height}",
-                                        "actual_fps": actual_fps,
-                                        "success_rate": f"{success_count}/5",
-                                        "status": "SUCCESS"
-                                    })
-                                    device_results.append(f"{backend_name}: SUCCESS - {frame.shape} ({success_count}/5 frames)")
-                                    test_camera.release()
-                                    break  # Found working backend, no need to test others
-                                else:
-                                    device_results.append(f"{backend_name}: Frame capture failed (0/5 frames)")
-                                    
-                                test_camera.release()
-                            else:
-                                device_results.append(f"{backend_name}: Could not open")
-                                
-                        except Exception as e:
-                            device_results.append(f"{backend_name}: Error - {str(e)[:50]}")
+                    working_devices.append({
+                        "device": "/dev/video0",
+                        "index": 0,
+                        "backend": "DEFAULT",
+                        "frame_shape": last_frame.shape,
+                        "actual_resolution": f"{actual_width}x{actual_height}",
+                        "actual_fps": actual_fps,
+                        "success_rate": f"{success_count}/5",
+                        "status": "SUCCESS"
+                    })
+                    diagnostics["tests"]["opencv_simple"] = f"SUCCESS - {last_frame.shape} ({success_count}/5 frames)"
+                else:
+                    diagnostics["tests"]["opencv_simple"] = "FAILED: Could not capture frames (0/5 attempts)"
                     
-                    diagnostics["tests"][f"opencv_device_{i}"] = " | ".join(device_results)
-                    
-                except Exception as e:
-                    diagnostics["tests"][f"opencv_device_{i}"] = f"FAILED: {e}"
+                test_camera.release()
+            else:
+                diagnostics["tests"]["opencv_simple"] = "FAILED: Could not open VideoCapture(0)"
+                
+        except Exception as e:
+            diagnostics["tests"]["opencv_simple"] = f"FAILED: {e}"
         
         diagnostics["working_opencv_devices"] = working_devices
-        diagnostics["tested_device_count"] = len(test_indices)
         
-        # Overall OpenCV test result
+        # Overall result
         if working_devices:
-            diagnostics["tests"]["opencv_capture"] = f"SUCCESS: {len(working_devices)} working devices found"
-            # Show the best device found
-            best_device = max(working_devices, key=lambda x: int(x["success_rate"].split("/")[0]))
-            diagnostics["recommended_device"] = best_device
+            diagnostics["tests"]["opencv_capture"] = f"SUCCESS: Simple VideoCapture(0) works!"
+            diagnostics["recommended_device"] = working_devices[0]
         else:
-            diagnostics["tests"]["opencv_capture"] = "FAILED: No working camera devices found"
+            diagnostics["tests"]["opencv_capture"] = "FAILED: VideoCapture(0) not working"
             
         # Legacy single device test for backwards compatibility
         try:
