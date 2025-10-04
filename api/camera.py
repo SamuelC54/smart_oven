@@ -1,19 +1,36 @@
 # --- Camera imports with error handling ---
 try:
-    from picamera2 import Picamera2
     import cv2
     import numpy as np
     CAMERA_AVAILABLE = True
+    OPENCV_AVAILABLE = True
+    logger.info("OpenCV camera libraries imported successfully")
 except ImportError as e:
     CAMERA_AVAILABLE = False
+    OPENCV_AVAILABLE = False
     # Create dummy numpy for type hints
     class np:
         ndarray = object
+    logger.info("OpenCV libraries not available in container environment (this is expected)")
 except Exception as e:
     CAMERA_AVAILABLE = False
+    OPENCV_AVAILABLE = False
     # Create dummy numpy for type hints
     class np:
         ndarray = object
+    logger.info("OpenCV libraries not available in container environment (this is expected)")
+
+# Try to import picamera2 as fallback
+try:
+    from picamera2 import Picamera2
+    PICAMERA2_AVAILABLE = True
+    if not CAMERA_AVAILABLE:
+        CAMERA_AVAILABLE = True
+        logger.info("Picamera2 libraries imported successfully")
+except ImportError:
+    PICAMERA2_AVAILABLE = False
+except Exception:
+    PICAMERA2_AVAILABLE = False
 
 # Import logger after hardware imports to avoid circular imports
 from logger import logger
@@ -33,7 +50,7 @@ _camera = None
 _camera_lock = threading.Lock()
 
 class CameraManager:
-    """Camera management using picamera2"""
+    """Camera management using OpenCV (primary) or picamera2 (fallback)"""
     
     def __init__(self, resolution=(640, 480), framerate=30):
         """Initialize camera with specified resolution and framerate"""
@@ -41,25 +58,46 @@ class CameraManager:
         self.framerate = framerate
         self.camera = None
         self.is_streaming = False
+        self.use_opencv = False
         
         if not CAMERA_AVAILABLE:
             raise Exception("Camera libraries not available")
         
-        try:
-            # Initialize picamera2
-            self.camera = Picamera2()
-            
-            # Configure camera
-            config = self.camera.create_video_configuration(
-                main={"size": self.resolution, "format": "RGB888"}
-            )
-            self.camera.configure(config)
-            
-            logger.info(f"Camera initialized with resolution {self.resolution} at {self.framerate}fps")
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize camera: {e}")
-            raise
+        # Try OpenCV first (works better in containers)
+        if OPENCV_AVAILABLE:
+            try:
+                self.camera = cv2.VideoCapture(0)  # Try /dev/video0
+                if self.camera.isOpened():
+                    # Set camera properties
+                    self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
+                    self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
+                    self.camera.set(cv2.CAP_PROP_FPS, framerate)
+                    self.use_opencv = True
+                    logger.info(f"OpenCV camera initialized with resolution {resolution} at {framerate}fps")
+                else:
+                    self.camera.release()
+                    self.camera = None
+                    raise Exception("Could not open camera with OpenCV")
+            except Exception as e:
+                logger.warning(f"OpenCV camera initialization failed: {e}")
+                self.camera = None
+        
+        # Fallback to picamera2 if OpenCV failed
+        if not self.use_opencv and PICAMERA2_AVAILABLE:
+            try:
+                self.camera = Picamera2()
+                config = self.camera.create_video_configuration(
+                    main={"size": self.resolution, "format": "RGB888"}
+                )
+                self.camera.configure(config)
+                self.use_opencv = False
+                logger.info(f"Picamera2 initialized with resolution {resolution} at {framerate}fps")
+            except Exception as e:
+                logger.error(f"Picamera2 initialization failed: {e}")
+                raise
+        
+        if self.camera is None:
+            raise Exception("Could not initialize camera with any available method")
     
     def start(self):
         """Start the camera"""
@@ -67,9 +105,15 @@ class CameraManager:
             raise Exception("Camera not initialized")
         
         try:
-            self.camera.start()
-            self.is_streaming = True
-            logger.info("Camera started successfully")
+            if self.use_opencv:
+                # OpenCV camera is already "started" when opened
+                self.is_streaming = True
+                logger.info("OpenCV camera ready for streaming")
+            else:
+                # Picamera2 needs explicit start
+                self.camera.start()
+                self.is_streaming = True
+                logger.info("Picamera2 started successfully")
         except Exception as e:
             logger.error(f"Failed to start camera: {e}")
             raise
@@ -78,9 +122,15 @@ class CameraManager:
         """Stop the camera"""
         if self.camera and self.is_streaming:
             try:
-                self.camera.stop()
-                self.is_streaming = False
-                logger.info("Camera stopped successfully")
+                if self.use_opencv:
+                    # OpenCV doesn't need explicit stop, just mark as not streaming
+                    self.is_streaming = False
+                    logger.info("OpenCV camera stopped")
+                else:
+                    # Picamera2 needs explicit stop
+                    self.camera.stop()
+                    self.is_streaming = False
+                    logger.info("Picamera2 stopped successfully")
             except Exception as e:
                 logger.error(f"Error stopping camera: {e}")
     
@@ -90,9 +140,16 @@ class CameraManager:
             return None
         
         try:
-            # Capture array directly from picamera2
-            frame = self.camera.capture_array()
-            return frame
+            if self.use_opencv:
+                ret, frame = self.camera.read()
+                if ret:
+                    return frame
+                else:
+                    return None
+            else:
+                # Picamera2 method
+                frame = self.camera.capture_array()
+                return frame
         except Exception as e:
             logger.error(f"Error capturing frame: {e}")
             return None
@@ -104,8 +161,12 @@ class CameraManager:
             return None
         
         try:
-            # Convert RGB to BGR for OpenCV
-            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            if self.use_opencv:
+                # OpenCV frame is already in BGR format
+                frame_bgr = frame
+            else:
+                # Picamera2 frame is in RGB format, convert to BGR for OpenCV
+                frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             
             # Encode as JPEG
             encode_params = [cv2.IMWRITE_JPEG_QUALITY, quality]
