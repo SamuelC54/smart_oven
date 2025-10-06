@@ -1,6 +1,7 @@
 name: Deploy to Raspberry Pi
 on:
   push:
+    branches: [main]
     paths:
       - "frontend/**"
       - "deploy/systemd/**"
@@ -9,78 +10,8 @@ on:
       - ".github/actions/**"
 
 jobs:
-  determine-changes:
-    runs-on: [self-hosted]
-    outputs:
-      frontend-should-run: ${{ steps.changes.outputs.frontend }}
-      systemd-should-run: ${{ steps.changes.outputs.systemd }}
-      api-should-run: ${{ steps.changes.outputs.api }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Determine what changed
-        id: changes
-        run: |
-          # Get list of changed files using git diff
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }})
-          echo "Changed files: $CHANGED_FILES"
-
-          # Check for frontend changes
-          if echo "$CHANGED_FILES" | grep -q "frontend/" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-pi\.yml" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
-            echo "frontend=true" >> $GITHUB_OUTPUT
-          else
-            echo "frontend=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Check for systemd changes
-          if echo "$CHANGED_FILES" | grep -q "deploy/systemd/" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-pi\.yml" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
-            echo "systemd=true" >> $GITHUB_OUTPUT
-          else
-            echo "systemd=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Check for api changes
-          if echo "$CHANGED_FILES" | grep -q "api/" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/workflows/deploy-pi\.yml" || \
-             echo "$CHANGED_FILES" | grep -q "\.github/actions/"; then
-            echo "api=true" >> $GITHUB_OUTPUT
-          else
-            echo "api=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Debug - Show commit info
-        run: |
-          echo "Commit SHA: ${{ github.sha }}"
-          echo "Previous commit: ${{ github.event.before }}"
-          echo "Current commit: ${{ github.event.after }}"
-          echo ""
-          echo "Modified files in this commit:"
-          echo "${{ github.event.head_commit.modified }}"
-          echo ""
-          echo "Added files in this commit:"
-          echo "${{ github.event.head_commit.added }}"
-          echo ""
-          echo "Removed files in this commit:"
-          echo "${{ github.event.head_commit.removed }}"
-          echo ""
-          echo "Files changed between commits:"
-          git diff --name-only ${{ github.event.before }} ${{ github.event.after }} || echo "Could not get diff"
-          echo ""
-          echo "=== Job Conditions ==="
-          echo "FRONTEND_JOB_SHOULD_RUN: ${{ steps.changes.outputs.frontend }}"
-          echo "SYSTEMD_JOB_SHOULD_RUN: ${{ steps.changes.outputs.systemd }}"
-          echo "API_JOB_SHOULD_RUN: ${{ steps.changes.outputs.api }}"
-
   frontend:
     runs-on: [self-hosted]
-    needs: determine-changes
-    if: needs.determine-changes.outputs.frontend-should-run == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -108,8 +39,6 @@ jobs:
 
   systemd:
     runs-on: [self-hosted]
-    needs: determine-changes
-    if: needs.determine-changes.outputs.systemd-should-run == 'true'
     steps:
       - name: Install/Update systemd units from repo
         run: |
@@ -133,8 +62,6 @@ jobs:
 
   api:
     runs-on: [self-hosted]
-    needs: determine-changes
-    if: needs.determine-changes.outputs.api-should-run == 'true'
     steps:
       - name: Restart API
         working-directory: ./api
