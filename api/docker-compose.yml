@@ -4,6 +4,10 @@ services:
     container_name: smart-oven-api
     restart: unless-stopped
     privileged: true # Give full hardware access
+    devices:
+      - "/dev/gpiomem:/dev/gpiomem"
+      - "/dev/spidev0.0:/dev/spidev0.0"
+      - "/dev/spidev0.1:/dev/spidev0.1"
     ports:
       - "8081:8081"
     volumes:
