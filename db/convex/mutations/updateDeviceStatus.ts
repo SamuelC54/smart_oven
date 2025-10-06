@@ -6,10 +6,7 @@ export default mutation({
   args: {
     deviceType: v.union(
       v.literal("temperature_sensor"),
-      v.literal("humidity_sensor"),
-      v.literal("fan"),
-      v.literal("heating_element"),
-      v.literal("probe")
+      v.literal("heating_element")
     ),
     deviceId: v.string(),
     status: v.union(

@@ -100,22 +100,6 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_start_time", ["startTime"]),
 
-  // Temperature history - sensor readings over time
-  temperatureHistory: defineTable({
-    sessionId: v.id("cookingSessions"),
-    timestamp: v.number(),
-    ovenTemp: v.number(),
-    humidity: v.number(),
-    foodTemp: v.optional(v.number()), // from probe if available
-    targetTemp: v.number(),
-    targetHumidity: v.optional(v.number()),
-    fanSpeed: v.number(),
-    phase: v.optional(v.string()),
-  })
-    .index("by_session", ["sessionId"])
-    .index("by_timestamp", ["timestamp"])
-    .index("by_session_timestamp", ["sessionId", "timestamp"]),
-
   // User profiles - for future multi-user support
   users: defineTable({
     email: v.string(),
@@ -173,10 +157,7 @@ export default defineSchema({
   deviceStatus: defineTable({
     deviceType: v.union(
       v.literal("temperature_sensor"),
-      v.literal("humidity_sensor"),
-      v.literal("fan"),
-      v.literal("heating_element"),
-      v.literal("probe")
+      v.literal("heating_element")
     ),
     deviceId: v.string(),
     status: v.union(

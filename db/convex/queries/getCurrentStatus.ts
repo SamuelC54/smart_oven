@@ -5,13 +5,7 @@ import { v } from "convex/values";
 export default query({
   args: {
     deviceType: v.optional(
-      v.union(
-        v.literal("temperature_sensor"),
-        v.literal("humidity_sensor"),
-        v.literal("fan"),
-        v.literal("heating_element"),
-        v.literal("probe")
-      )
+      v.union(v.literal("temperature_sensor"), v.literal("heating_element"))
     ),
   },
   handler: async (ctx, args) => {
