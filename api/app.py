@@ -11,7 +11,8 @@ from routes import (
     temperature_get,
     logs,
     camera,
-    heater_set
+    heater_set,
+    heater_control
 )
 
 app = FastAPI(title="Pi Sensor/GPIO API (Docker)")
