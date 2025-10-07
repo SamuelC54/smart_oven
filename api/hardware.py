@@ -29,12 +29,22 @@ else:
     logger.info("CircuitPython libraries not available")
 
 # Import config after hardware imports
-from config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
+from config import RTD_NOMINAL, REF_RESISTOR, WIRES
 
 # --- Global sensor instance ---
 _sensor = None
 class MAX31865Adafruit:
     """MAX31865 implementation using Adafruit CircuitPython library"""
+    
+    # MAX31865 fault code meanings
+    FAULT_CODES = {
+        0: "RTD High Threshold - RTD resistance exceeds high threshold",
+        1: "RTD Low Threshold - RTD resistance is below low threshold", 
+        2: "REFIN- Low - Voltage at REFIN- is below 0.85 × VBIAS when FORCE- is closed",
+        3: "REFIN- High - Voltage at REFIN- is above 0.85 × VBIAS when FORCE- is open",
+        4: "RTDIN- Low - Voltage at RTDIN- is below 0.85 × VBIAS when FORCE- is open",
+        5: "Overvoltage/Undervoltage - An overvoltage or undervoltage condition detected"
+    }
     
     def __init__(self, rtd_nominal=100, ref_resistor=430, wires=3):
         # Store configuration parameters
@@ -67,7 +77,98 @@ class MAX31865Adafruit:
             logger.info("Configured for PT1000 sensor")
         else:
             logger.warning(f"Unknown RTD nominal value: {self.rtd_nominal}Ω")
+        
+        # Perform initial sensor diagnostics
+        self._diagnose_sensor()
     
+    def _diagnose_sensor(self):
+        """Perform initial sensor diagnostics"""
+        try:
+            # Check for initial faults
+            fault = self.sensor.fault
+            if fault:
+                logger.warning("Initial sensor faults detected during initialization:")
+                self._log_fault_details(fault)
+            else:
+                logger.info("Sensor initialization successful - no faults detected")
+                
+            # Try to read initial temperature
+            try:
+                temp = self.sensor.temperature
+                logger.info(f"Initial temperature reading: {temp:.3f}°C")
+            except Exception as e:
+                logger.warning(f"Could not read initial temperature: {e}")
+                
+        except Exception as e:
+            logger.error(f"Error during sensor diagnostics: {e}")
+    
+    def _log_fault_details(self, fault):
+        """Log detailed fault information"""
+        if not fault:
+            return
+            
+        logger.error(f"MAX31865 fault detected: {fault}")
+        
+        # Log each individual fault
+        for i, fault_active in enumerate(fault):
+            if fault_active:
+                fault_description = self.FAULT_CODES.get(i, f"Unknown fault {i}")
+                logger.error(f"  Fault {i}: {fault_description}")
+        
+        # Provide troubleshooting guidance
+        logger.warning("Troubleshooting steps:")
+        logger.warning("1. Check RTD sensor wiring connections")
+        logger.warning("2. Verify sensor is not damaged or disconnected")
+        logger.warning("3. Confirm reference resistor value matches configuration")
+        logger.warning("4. Check power supply voltage (3.3V or 5V)")
+        logger.warning("5. Try clearing faults with clear_faults() method")
+    
+    def clear_faults(self):
+        """Clear sensor faults"""
+        try:
+            self.sensor.clear_faults()
+            logger.info("Sensor faults cleared")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to clear faults: {e}")
+            return False
+    
+    def get_sensor_status(self):
+        """Get comprehensive sensor status"""
+        status = {
+            "configuration": {
+                "rtd_nominal": self.rtd_nominal,
+                "ref_resistor": self.ref_resistor,
+                "wires": self.wires
+            },
+            "faults": None,
+            "temperature": None,
+            "fault_details": []
+        }
+        
+        try:
+            # Get fault status
+            fault = self.sensor.fault
+            status["faults"] = fault
+            
+            if fault:
+                for i, fault_active in enumerate(fault):
+                    if fault_active:
+                        fault_description = self.FAULT_CODES.get(i, f"Unknown fault {i}")
+                        status["fault_details"].append({
+                            "fault_id": i,
+                            "description": fault_description
+                        })
+            
+            # Get temperature
+            temp = self.sensor.temperature
+            status["temperature"] = temp
+            
+        except Exception as e:
+            status["error"] = str(e)
+            
+        return status
+
     def temperature(self):
         """Get temperature in Celsius"""
         try:
@@ -82,7 +183,7 @@ class MAX31865Adafruit:
                     # Try to get sensor fault status
                     fault = self.sensor.fault
                     if fault:
-                        logger.error(f"MAX31865 fault detected: {fault}")
+                        self._log_fault_details(fault)
                 except:
                     pass
                 logger.warning("Check wiring and sensor configuration")
