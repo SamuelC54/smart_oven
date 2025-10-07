@@ -69,8 +69,8 @@ def get_heater_status():
     """Get current heater status by reading GPIO 23 and 24"""
     logger.info("Heater status requested")
     
-    BACK_HEATER_GPIO = 23
-    FRONT_HEATER_GPIO = 24
+    BACK_HEATER_GPIO = 24
+    FRONT_HEATER_GPIO = 23
     
     try:
         back_state = get_output(BACK_HEATER_GPIO)
