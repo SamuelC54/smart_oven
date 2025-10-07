@@ -157,7 +157,10 @@ export default defineSchema({
   deviceStatus: defineTable({
     deviceType: v.union(
       v.literal("temperature_sensor"),
-      v.literal("heating_element")
+      v.literal("heating_element"),
+      v.literal("fan"),
+      v.literal("humidity_sensor"),
+      v.literal("probe")
     ),
     deviceId: v.string(),
     status: v.union(
