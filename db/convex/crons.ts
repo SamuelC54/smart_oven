@@ -17,4 +17,11 @@ crons.interval(
   internal.convexActions.cleanupDeviceStatus.default
 );
 
+// Cron job to control heater based on active cooking sessions every 5 seconds
+crons.interval(
+  "control heater from sessions",
+  { seconds: 5 },
+  internal.convexActions.controlHeaterFromSessions.default
+);
+
 export default crons;
