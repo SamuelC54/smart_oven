@@ -5,7 +5,7 @@ import { api } from "../_generated/api";
 export default internalAction({
   handler: async (ctx) => {
     // Get API URL from Convex environment variables
-    const API_BASE_URL = process.env.API_URL;
+    const API_BASE_URL = process.env.API_URL || "http://192.168.0.71:8081";
 
     try {
       // Fetch temperature data using direct fetch
