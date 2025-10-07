@@ -201,6 +201,60 @@ def set_gpio(gpio_num: int, state: bool):
         logger.error(f"Failed to set GPIO {gpio_num}: {e}")
         raise Exception(f"GPIO operation failed: {e}")
 
+def get_gpio(gpio_num: int):
+    """Get GPIO state
+    
+    Args:
+        gpio_num: GPIO number to read
+        
+    Returns:
+        bool: True if HIGH, False if LOW
+        
+    Raises:
+        Exception: If hardware not available or GPIO operation fails
+    """
+    if not HARDWARE_AVAILABLE:
+        raise Exception("Hardware libraries not available")
+    
+    try:
+        # Validate GPIO number and get board object
+        board_gpio = validate_gpio(gpio_num)
+        
+        # Create GPIO object as input to read state
+        gpio_obj = digitalio.DigitalInOut(board_gpio)
+        gpio_obj.direction = digitalio.Direction.INPUT
+        
+        # Read the current state
+        state = gpio_obj.value
+        
+        # Clean up the GPIO object to avoid "busy" errors
+        gpio_obj.deinit()
+        
+        logger.info(f"GPIO {gpio_num} read as {state}")
+        return state
+        
+    except ValueError as e:
+        # GPIO validation error - already has proper message
+        logger.error(str(e))
+        raise Exception(str(e))
+    except PermissionError as e:
+        error_msg = f"Permission denied accessing GPIO {gpio_num}. Check if running with proper privileges or if GPIO device is accessible."
+        logger.error(error_msg)
+        raise Exception(error_msg)
+    except OSError as e:
+        if "busy" in str(e).lower():
+            available_gpios = get_available_gpios()
+            error_msg = f"GPIO {gpio_num} is busy or already in use. Try a different GPIO from available options: {available_gpios}"
+        elif "no such file or directory" in str(e).lower():
+            error_msg = f"GPIO {gpio_num} device not found. Check if GPIO hardware is available and properly configured."
+        else:
+            error_msg = f"OS error accessing GPIO {gpio_num}: {e}"
+        logger.error(error_msg)
+        raise Exception(error_msg)
+    except Exception as e:
+        logger.error(f"Failed to get GPIO {gpio_num}: {e}")
+        raise Exception(f"GPIO operation failed: {e}")
+
 def diagnose_gpio_access():
     """Diagnose GPIO access issues and return detailed information"""
     diagnostics = {

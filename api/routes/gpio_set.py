@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from hardware import set_gpio, diagnose_gpio_access
+from hardware import set_gpio, get_gpio, diagnose_gpio_access
 from logger import logger
 
 router = APIRouter()
@@ -17,6 +17,20 @@ def set_gpio_endpoint(request: GPIORequest):
         return {"message": f"GPIO {request.gpio_num} set to {request.state}"}
     except Exception as e:
         logger.error(f"Failed to set GPIO {request.gpio_num}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/gpio/{gpio_num}")
+def get_gpio_endpoint(gpio_num: int):
+    logger.info(f"GPIO read requested: GPIO {gpio_num}")
+    try:
+        state = get_gpio(gpio_num)
+        return {
+            "gpio_num": gpio_num,
+            "state": state,
+            "message": f"GPIO {gpio_num} is {state}"
+        }
+    except Exception as e:
+        logger.error(f"Failed to get GPIO {gpio_num}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/gpio/debug/diagnose")
