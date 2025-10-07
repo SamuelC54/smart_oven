@@ -33,6 +33,9 @@ from config import RTD_NOMINAL, REF_RESISTOR, WIRES
 
 # --- Global sensor instance ---
 _sensor = None
+
+# --- Global GPIO object tracking ---
+_gpio_objects = {}
 class MAX31865Adafruit:
     """MAX31865 implementation using Adafruit CircuitPython library"""
     
@@ -148,8 +151,8 @@ def validate_gpio(gpio_num: int):
     
     return GPIO_MAP[gpio_num]
 
-def set_gpio(gpio_num: int, state: bool):
-    """Set GPIO to specified state
+def set_output(gpio_num: int, state: bool):
+    """Set GPIO output to specified state using persistent GPIO object
     
     Args:
         gpio_num: GPIO number to control
@@ -168,15 +171,23 @@ def set_gpio(gpio_num: int, state: bool):
         # Validate GPIO number and get board object
         board_gpio = validate_gpio(gpio_num)
         
-        # Create GPIO object with proper cleanup
-        gpio_obj = digitalio.DigitalInOut(board_gpio)
-        gpio_obj.direction = digitalio.Direction.OUTPUT
+        global _gpio_objects
+        
+        # Get or create GPIO object
+        if gpio_num not in _gpio_objects:
+            gpio_obj = digitalio.DigitalInOut(board_gpio)
+            gpio_obj.direction = digitalio.Direction.OUTPUT
+            _gpio_objects[gpio_num] = gpio_obj
+            logger.info(f"Created new GPIO object for GPIO {gpio_num}")
+        else:
+            gpio_obj = _gpio_objects[gpio_num]
+            # Ensure it's set as output
+            gpio_obj.direction = digitalio.Direction.OUTPUT
+        
+        # Set the value
         gpio_obj.value = state
         
-        # Clean up the GPIO object to avoid "busy" errors
-        gpio_obj.deinit()
-        
-        logger.info(f"GPIO {gpio_num} set to {state}")
+        logger.info(f"GPIO {gpio_num} output set to {state}")
         return True
         
     except ValueError as e:
@@ -198,17 +209,58 @@ def set_gpio(gpio_num: int, state: bool):
         logger.error(error_msg)
         raise Exception(error_msg)
     except Exception as e:
-        logger.error(f"Failed to set GPIO {gpio_num}: {e}")
+        logger.error(f"Failed to set GPIO {gpio_num} output: {e}")
         raise Exception(f"GPIO operation failed: {e}")
 
-def get_gpio(gpio_num: int):
-    """Get GPIO state
+def get_output(gpio_num: int):
+    """Get the current output value from the persistent GPIO object
+    
+    Args:
+        gpio_num: GPIO number to check
+        
+    Returns:
+        bool: The current output value, or False if GPIO not configured as output
+        
+    Raises:
+        Exception: If GPIO number is not supported or not configured
+    """
+    try:
+        # Validate GPIO number
+        validate_gpio(gpio_num)
+        
+        global _gpio_objects
+        
+        if gpio_num not in _gpio_objects:
+            logger.warning(f"GPIO {gpio_num} not configured, returning False")
+            return False
+        
+        gpio_obj = _gpio_objects[gpio_num]
+        
+        # Check if it's configured as output
+        if gpio_obj.direction != digitalio.Direction.OUTPUT:
+            logger.warning(f"GPIO {gpio_num} not configured as output, returning False")
+            return False
+        
+        output_state = gpio_obj.value
+        logger.info(f"GPIO {gpio_num} current output value: {output_state}")
+        return output_state
+        
+    except ValueError as e:
+        # GPIO validation error - already has proper message
+        logger.error(str(e))
+        raise Exception(str(e))
+    except Exception as e:
+        logger.error(f"Failed to get GPIO {gpio_num} output state: {e}")
+        raise Exception(f"GPIO operation failed: {e}")
+
+def read_input(gpio_num: int):
+    """Read GPIO input state using persistent GPIO object
     
     Args:
         gpio_num: GPIO number to read
         
     Returns:
-        bool: True if HIGH, False if LOW
+        bool: True for HIGH, False for LOW
         
     Raises:
         Exception: If hardware not available or GPIO operation fails
@@ -220,17 +272,23 @@ def get_gpio(gpio_num: int):
         # Validate GPIO number and get board object
         board_gpio = validate_gpio(gpio_num)
         
-        # Create GPIO object as input to read state
-        gpio_obj = digitalio.DigitalInOut(board_gpio)
-        gpio_obj.direction = digitalio.Direction.INPUT
+        global _gpio_objects
+        
+        # Get or create GPIO object
+        if gpio_num not in _gpio_objects:
+            gpio_obj = digitalio.DigitalInOut(board_gpio)
+            gpio_obj.direction = digitalio.Direction.INPUT
+            _gpio_objects[gpio_num] = gpio_obj
+            logger.info(f"Created new GPIO object for GPIO {gpio_num} as input")
+        else:
+            gpio_obj = _gpio_objects[gpio_num]
+            # Set as input for reading
+            gpio_obj.direction = digitalio.Direction.INPUT
         
         # Read the current state
         state = gpio_obj.value
         
-        # Clean up the GPIO object to avoid "busy" errors
-        gpio_obj.deinit()
-        
-        logger.info(f"GPIO {gpio_num} read as {state}")
+        logger.info(f"GPIO {gpio_num} input read as {state}")
         return state
         
     except ValueError as e:
@@ -252,8 +310,101 @@ def get_gpio(gpio_num: int):
         logger.error(error_msg)
         raise Exception(error_msg)
     except Exception as e:
-        logger.error(f"Failed to get GPIO {gpio_num}: {e}")
+        logger.error(f"Failed to read GPIO {gpio_num} input: {e}")
         raise Exception(f"GPIO operation failed: {e}")
+
+def get_gpio_object(gpio_num: int, direction=digitalio.Direction.OUTPUT):
+    """Get or create a persistent GPIO object for direct manipulation
+    
+    Args:
+        gpio_num: GPIO number to get/create
+        direction: Direction for the GPIO (OUTPUT or INPUT)
+        
+    Returns:
+        digitalio.DigitalInOut: The GPIO object for direct manipulation
+        
+    Raises:
+        Exception: If hardware not available or GPIO operation fails
+    """
+    if not HARDWARE_AVAILABLE:
+        raise Exception("Hardware libraries not available")
+    
+    try:
+        # Validate GPIO number and get board object
+        board_gpio = validate_gpio(gpio_num)
+        
+        global _gpio_objects
+        
+        # Get or create GPIO object
+        if gpio_num not in _gpio_objects:
+            gpio_obj = digitalio.DigitalInOut(board_gpio)
+            gpio_obj.direction = direction
+            _gpio_objects[gpio_num] = gpio_obj
+            logger.info(f"Created new GPIO object for GPIO {gpio_num} as {direction}")
+        else:
+            gpio_obj = _gpio_objects[gpio_num]
+            # Update direction if needed
+            if gpio_obj.direction != direction:
+                gpio_obj.direction = direction
+                logger.info(f"Updated GPIO {gpio_num} direction to {direction}")
+        
+        return gpio_obj
+        
+    except ValueError as e:
+        # GPIO validation error - already has proper message
+        logger.error(str(e))
+        raise Exception(str(e))
+    except PermissionError as e:
+        error_msg = f"Permission denied accessing GPIO {gpio_num}. Check if running with proper privileges or if GPIO device is accessible."
+        logger.error(error_msg)
+        raise Exception(error_msg)
+    except OSError as e:
+        if "busy" in str(e).lower():
+            available_gpios = get_available_gpios()
+            error_msg = f"GPIO {gpio_num} is busy or already in use. Try a different GPIO from available options: {available_gpios}"
+        elif "no such file or directory" in str(e).lower():
+            error_msg = f"GPIO {gpio_num} device not found. Check if GPIO hardware is available and properly configured."
+        else:
+            error_msg = f"OS error accessing GPIO {gpio_num}: {e}"
+        logger.error(error_msg)
+        raise Exception(error_msg)
+    except Exception as e:
+        logger.error(f"Failed to get GPIO {gpio_num} object: {e}")
+        raise Exception(f"GPIO operation failed: {e}")
+
+def cleanup_gpio(gpio_num: int):
+    """Clean up and remove a GPIO object from the map
+    
+    Args:
+        gpio_num: GPIO number to clean up
+        
+    Returns:
+        bool: True if successful
+    """
+    global _gpio_objects
+    
+    if gpio_num in _gpio_objects:
+        try:
+            gpio_obj = _gpio_objects[gpio_num]
+            gpio_obj.deinit()
+            del _gpio_objects[gpio_num]
+            logger.info(f"Cleaned up GPIO {gpio_num}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to cleanup GPIO {gpio_num}: {e}")
+            return False
+    else:
+        logger.warning(f"GPIO {gpio_num} not found in object map")
+        return False
+
+def cleanup_all_gpios():
+    """Clean up all GPIO objects in the map"""
+    global _gpio_objects
+    
+    for gpio_num in list(_gpio_objects.keys()):
+        cleanup_gpio(gpio_num)
+    
+    logger.info("Cleaned up all GPIO objects")
 
 def diagnose_gpio_access():
     """Diagnose GPIO access issues and return detailed information"""
