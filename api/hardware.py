@@ -29,7 +29,7 @@ else:
     logger.info("CircuitPython libraries not available")
 
 # Import config after hardware imports
-from config import RTD_NOMINAL, REF_RESISTOR, WIRES, CS_NAME
+from config import RTD_NOMINAL, REF_RESISTOR, WIRES
 
 # --- Global sensor instance ---
 _sensor = None
